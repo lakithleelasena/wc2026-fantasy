@@ -1,16 +1,16 @@
 /* ── WC 2026 Fantasy – Styles ────────────────────────────────────────────── */
 :root {
-  --bg:        #0a1628;
-  --surface:   #111f38;
-  --surface2:  #182944;
-  --accent:    #c8a84b;
-  --accent2:   #4db8e8;
-  --text:      #e8edf5;
+  --bg:        #060e1e;
+  --surface:   #0d1e38;
+  --surface2:  #152844;
+  --accent:    #1b6fe4;
+  --accent2:   #00c8ff;
+  --text:      #ffffff;
   --muted:     #7a8fad;
   --radius:    10px;
   --gkp:       #f5a623;
   --def:       #27ae60;
-  --mid:       #2980b9;
+  --mid:       #1b6fe4;
   --fwd:       #e74c3c;
 }
 
@@ -26,14 +26,14 @@ body {
 
 /* Header */
 header {
-  background: linear-gradient(135deg, #0a1628 0%, #1a3a6b 100%);
+  background: linear-gradient(135deg, #060e1e 0%, #0d2a5e 50%, #1b3a8a 100%);
   border-bottom: 2px solid var(--accent);
   padding: 14px 24px;
 }
 .header-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: auto; }
 .logo { display: flex; align-items: center; gap: 10px; }
 .trophy { font-size: 28px; }
-.title { font-size: 22px; font-weight: 700; color: var(--accent); letter-spacing: 0.5px; }
+.title { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: 0.5px; }
 .version { font-size: 11px; color: var(--muted); }
 
 /* Tabs */
@@ -77,17 +77,39 @@ header {
 .card h2 { font-size: 17px; color: var(--accent); margin-bottom: 6px; }
 .hint { color: var(--muted); font-size: 12px; margin-bottom: 16px; }
 
+/* Controls row: budget box + sliders side by side */
+.controls-row { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 16px; }
+.budget-box { flex-shrink: 0; }
+.budget-label {
+  color: var(--muted); font-size: 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.budget-label input[type=number] {
+  background: var(--surface2);
+  border: 1px solid #2a3f60;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  padding: 6px 10px;
+  width: 90px;
+}
+
 /* Sliders */
-.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.sliders { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; flex: 1; }
 .sliders label { color: var(--muted); font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
 .sliders input[type=range] { accent-color: var(--accent); width: 100%; }
+
+/* Pitch rows */
+.pitch-rows { display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px; }
+.pitch-row { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
 
 /* Button */
 .btn-primary {
   background: var(--accent);
   border: none;
   border-radius: 6px;
-  color: #0a1628;
+  color: #ffffff;
   cursor: pointer;
   font-size: 14px;
   font-weight: 700;
@@ -99,7 +121,7 @@ header {
 
 /* Summary Banner */
 .summary-banner {
-  background: linear-gradient(90deg, var(--surface2), #1a3a6b);
+  background: linear-gradient(90deg, var(--surface2), #0d2a5e);
   border: 1px solid var(--accent);
   border-radius: var(--radius);
   display: flex;
@@ -124,24 +146,32 @@ header {
 /* Player Grid */
 .player-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 10px;
   margin-bottom: 8px;
 }
 .player-grid.bench { opacity: 0.8; }
 
+/* Pitch rows */
+.pitch-rows { display: flex; flex-direction: column; gap: 14px; margin-bottom: 8px; }
+.pitch-row  { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
 /* Player Card */
 .player-card {
   background: var(--surface);
   border: 1px solid var(--surface2);
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 10px;
+  padding: 14px;
   position: relative;
   transition: border-color 0.2s;
+  min-width: 160px;
+  width: 160px;
 }
 .player-card:hover { border-color: var(--accent2); }
-.player-card.captain  { border-color: var(--accent); }
-.player-card.vice     { border-color: var(--accent2); }
+.player-card.captain  { border-color: var(--accent); box-shadow: 0 0 8px rgba(27,111,228,0.4); }
+.player-card.vice     { border-color: var(--accent2); box-shadow: 0 0 8px rgba(0,200,255,0.3); }
+
+.card-top { margin-bottom: 10px; }
 
 .pos-badge {
   border-radius: 4px;
@@ -149,8 +179,8 @@ header {
   display: inline-block;
   font-size: 10px;
   font-weight: 700;
-  padding: 1px 5px;
-  margin-bottom: 4px;
+  padding: 2px 6px;
+  margin-bottom: 5px;
   text-transform: uppercase;
 }
 .pos-badge.GKP { background: var(--gkp); }
@@ -158,26 +188,56 @@ header {
 .pos-badge.MID { background: var(--mid); }
 .pos-badge.FWD { background: var(--fwd); }
 
-.player-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; line-height: 1.3; }
-.player-team { color: var(--muted); font-size: 11px; margin-bottom: 8px; }
-.player-pts  { color: var(--accent); font-size: 20px; font-weight: 700; }
-.player-pts-label { color: var(--muted); font-size: 10px; }
-.player-cost { color: var(--muted); font-size: 11px; margin-top: 4px; }
+.player-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; line-height: 1.3; }
+.player-team { color: var(--muted); font-size: 11px; }
+
+/* Per-game breakdown */
+.game-breakdown {
+  border-top: 1px solid var(--surface2);
+  border-bottom: 1px solid var(--surface2);
+  padding: 6px 0;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.game-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.game-label { color: var(--muted); font-size: 11px; }
+.game-row.actual   .game-score { color: #4cdb7a; font-weight: 700; }
+.game-row.predicted .game-score { color: var(--muted); font-style: italic; }
+
+/* Total row */
+.card-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.total-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+.total-pts   { color: var(--accent2); font-size: 20px; font-weight: 700; }
+
+.player-cost { color: var(--muted); font-size: 11px; }
+
 .cap-badge {
   background: var(--accent);
   border-radius: 50%;
-  color: #0a1628;
+  color: #ffffff;
   font-size: 10px;
   font-weight: 700;
-  height: 18px;
-  line-height: 18px;
+  height: 20px;
+  line-height: 20px;
   position: absolute;
-  right: 8px;
+  right: 10px;
   text-align: center;
-  top: 8px;
-  width: 18px;
+  top: 10px;
+  width: 20px;
 }
-.vc-badge { background: var(--accent2); color: #0a1628; }
+.vc-badge { background: var(--accent2); color: #060e1e; }
 
 /* Players Table */
 .filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }

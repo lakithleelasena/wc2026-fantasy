@@ -29,19 +29,23 @@
       <h2>Pick Your Group Stage Squad</h2>
       <p class="hint">LP optimizer picks the best 15-player squad (2 GKP · 5 DEF · 5 MID · 3 FWD) for all 3 group stage matches.</p>
 
-      <div class="sliders">
-        <label>Budget: $<span id="budget-display">100.0</span>m
-          <input type="range" id="budget" min="800" max="1000" step="5" value="1000" />
-        </label>
-        <label>Team Strength weight: <span id="w-ts-display">0.30</span>
-          <input type="range" id="w-ts" min="0" max="1" step="0.05" value="0.30" />
-        </label>
-        <label>Fixture Ease weight: <span id="w-fe-display">0.40</span>
-          <input type="range" id="w-fe" min="0" max="1" step="0.05" value="0.40" />
-        </label>
-        <label>Form weight: <span id="w-fo-display">0.20</span>
-          <input type="range" id="w-fo" min="0" max="1" step="0.05" value="0.20" />
-        </label>
+      <div class="controls-row">
+        <div class="budget-box">
+          <label class="budget-label">Budget ($m)
+            <input type="number" id="budget" min="80" max="100" step="0.5" value="100" />
+          </label>
+        </div>
+        <div class="sliders">
+          <label>Team Strength <span id="w-ts-display">0.30</span>
+            <input type="range" id="w-ts" min="0" max="1" step="0.05" value="0.30" />
+          </label>
+          <label>Fixture Ease <span id="w-fe-display">0.40</span>
+            <input type="range" id="w-fe" min="0" max="1" step="0.05" value="0.40" />
+          </label>
+          <label>Form <span id="w-fo-display">0.20</span>
+            <input type="range" id="w-fo" min="0" max="1" step="0.05" value="0.20" />
+          </label>
+        </div>
       </div>
 
       <button id="optimize-btn" class="btn-primary">Optimize Squad</button>
@@ -60,7 +64,12 @@
       </div>
 
       <h3 class="section-label">Starting XI</h3>
-      <div id="starters-grid" class="player-grid"></div>
+      <div class="pitch-rows">
+        <div class="pitch-row" id="row-gkp"></div>
+        <div class="pitch-row" id="row-def"></div>
+        <div class="pitch-row" id="row-mid"></div>
+        <div class="pitch-row" id="row-fwd"></div>
+      </div>
 
       <h3 class="section-label">Bench</h3>
       <div id="bench-grid" class="player-grid bench"></div>

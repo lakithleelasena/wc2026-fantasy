@@ -23,7 +23,6 @@ function bindSlider(id, displayId, divisor = 1) {
       : parseFloat(el.value).toFixed(2);
   });
 }
-bindSlider('budget', 'budget-display', 10);
 bindSlider('w-ts', 'w-ts-display');
 bindSlider('w-fe', 'w-fe-display');
 bindSlider('w-fo', 'w-fo-display');
@@ -47,14 +46,37 @@ function playerCard(p, captainId, viceCaptainId) {
   const badge  = isCap ? '<span class="cap-badge">C</span>'
                : isVC  ? '<span class="cap-badge vc-badge">V</span>'
                : '';
+
+  const predPerGame = p.predicted_points / 3;
+  const rs = p.round_scores || {};
+  let totalDisplay = 0;
+  const gameRows = [1, 2, 3].map(r => {
+    const actual = rs[r] != null ? rs[r] : null;
+    if (actual !== null) {
+      totalDisplay += actual;
+      return `<div class="game-row actual"><span class="game-label">G${r}</span><span class="game-score">${actual} pts</span></div>`;
+    } else {
+      totalDisplay += predPerGame;
+      return `<div class="game-row predicted"><span class="game-label">G${r}</span><span class="game-score">~${predPerGame.toFixed(1)}</span></div>`;
+    }
+  }).join('');
+
+  const anyActual = [1,2,3].some(r => rs[r] != null);
+  const totalLabel = anyActual ? 'Total' : 'Pred Total';
+
   return `
     <div class="${cls}">
       ${badge}
-      ${posBadge(p.position)}
-      <div class="player-name">${p.short_name || p.name}</div>
-      <div class="player-team">${p.team}</div>
-      <div class="player-pts">${p.predicted_points.toFixed(1)}</div>
-      <div class="player-pts-label">pred pts (3 games)</div>
+      <div class="card-top">
+        ${posBadge(p.position)}
+        <div class="player-name">${p.short_name || p.name}</div>
+        <div class="player-team">${p.team}</div>
+      </div>
+      <div class="game-breakdown">${gameRows}</div>
+      <div class="card-total">
+        <span class="total-label">${totalLabel}</span>
+        <span class="total-pts">${totalDisplay.toFixed(1)}</span>
+      </div>
       <div class="player-cost">$${p.cost.toFixed(1)}m</div>
     </div>`;
 }
@@ -73,7 +95,7 @@ document.getElementById('optimize-btn').addEventListener('click', async () => {
 
   try {
     const payload = {
-      budget:          parseInt(document.getElementById('budget').value),
+      budget:          Math.round(parseFloat(document.getElementById('budget').value) * 10),
       w_team_strength: parseFloat(document.getElementById('w-ts').value),
       w_fixture_ease:  parseFloat(document.getElementById('w-fe').value),
       w_form:          parseFloat(document.getElementById('w-fo').value),
@@ -93,8 +115,12 @@ document.getElementById('optimize-btn').addEventListener('click', async () => {
     document.getElementById('total-cost').textContent = `$${data.total_cost.toFixed(1)}m`;
     document.getElementById('total-pts').textContent  = data.total_predicted_points.toFixed(1);
 
-    document.getElementById('starters-grid').innerHTML =
-      data.starters.map(p => playerCard(p, data.captain_id, data.vice_captain_id)).join('');
+    const byPos = { GKP: [], DEF: [], MID: [], FWD: [] };
+    data.starters.forEach(p => (byPos[p.position] || (byPos[p.position] = [])).push(p));
+    ['GKP','DEF','MID','FWD'].forEach(pos => {
+      document.getElementById('row-' + pos.toLowerCase()).innerHTML =
+        (byPos[pos] || []).map(p => playerCard(p, data.captain_id, data.vice_captain_id)).join('');
+    });
     document.getElementById('bench-grid').innerHTML =
       data.bench.map(p => playerCard(p, null, null)).join('');
 

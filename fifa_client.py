@@ -1,7 +1,12 @@
 """
 FIFA Fantasy WC2026 – Data Client
-Fetches players and fixtures from play.fifa.com/json/ (public, no auth).
+Fetches players and fixtures from play.fifa.com/json/fantasy/ (public, no auth).
 Caches data for CACHE_TTL_SECONDS to avoid hammering the endpoint.
+
+WC2026 schema differences from Women's WC:
+  - Player: firstName/lastName/knownName, price (float $m), position string,
+            percentSelected, stats.roundPoints (array), stats.form
+  - Round:  stage is uppercase ("GROUP"), squad IDs are small ints (1–48)
 """
 from __future__ import annotations
 
@@ -16,7 +21,6 @@ from config import (
     CACHE_TTL_SECONDS,
     FIFA_RANKINGS,
     PLAYERS_URL,
-    POSITION_MAP,
     ROUNDS_URL,
     SEMAPHORE_LIMIT,
 )
@@ -33,46 +37,41 @@ HEADERS = {
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
                   "Chrome/124.0.0.0 Safari/537.36",
     "Accept": "application/json",
-    "Referer": "https://play.fifa.com/",
+    "Referer": "https://play.fifa.com/fantasy",
 }
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _team_strength_score(team_name: str) -> float:
-    """0–1 score from FIFA world ranking (1=best → 1.0, 48=worst → ~0.0)."""
+    """0–1 score from FIFA world ranking (rank 1 → 1.0, rank 48 → ~0.0)."""
     rank = FIFA_RANKINGS.get(team_name, 48)
-    # Invert: rank 1 → 1.0, rank 48 → ~0.0
     return round(1.0 - (rank - 1) / 47, 4)
 
 
-def _build_squad_name_map(squads: list[dict]) -> dict[int, str]:
-    """Map squad ID → team name from the squads list in players API."""
-    return {s["id"]: s["name"] for s in squads}
+def _fixture_ease(squad_id: int, opponents: list[int], squad_id_to_name: dict) -> float:
+    """Average ease of a team's 3 group opponents (weaker opponent = higher ease)."""
+    if not opponents:
+        return 0.5
+    ease_scores = [1.0 - _team_strength_score(squad_id_to_name.get(opp, "")) for opp in opponents]
+    return round(sum(ease_scores) / len(ease_scores), 4)
 
 
 def _parse_rounds(raw_rounds: list[dict]) -> dict:
-    """
-    Returns:
-      group_fixtures:   {squad_id: [opponent_squad_id, ...]}  (group stage only)
-      group_rounds:     list of round dicts for group stage
-      squad_id_to_name: {squad_id: team_name}
-    """
+    """Extract group-stage fixture data and squad id→name mapping."""
     squad_id_to_name: dict[int, str] = {}
     group_fixtures: dict[int, list[int]] = {}
     group_rounds: list[dict] = []
 
     for rnd in raw_rounds:
-        if rnd.get("stage") != "group":
+        if rnd.get("stage", "").upper() != "GROUP":
             continue
         group_rounds.append(rnd)
         for match in rnd.get("tournaments", []):
             home = match["homeSquadId"]
             away = match["awaySquadId"]
-            home_name = match.get("homeSquadName", "")
-            away_name = match.get("awaySquadName", "")
-            squad_id_to_name[home] = home_name
-            squad_id_to_name[away] = away_name
+            squad_id_to_name[home] = match.get("homeSquadName", "")
+            squad_id_to_name[away] = match.get("awaySquadName", "")
             group_fixtures.setdefault(home, []).append(away)
             group_fixtures.setdefault(away, []).append(home)
 
@@ -83,19 +82,29 @@ def _parse_rounds(raw_rounds: list[dict]) -> dict:
     }
 
 
-def _fixture_ease(squad_id: int, opponents: list[int], squad_id_to_name: dict) -> float:
+def _player_name(p: dict) -> tuple[str, str]:
+    """Return (full_name, short_name) from a WC2026 player dict."""
+    known = p.get("knownName")
+    first = p.get("firstName", "")
+    last  = p.get("lastName", "")
+    full  = known or f"{first} {last}".strip()
+    short = known or last or full
+    return full, short
+
+
+def _round_scores(round_points: list) -> dict:
     """
-    Average ease of a team's 3 group opponents.
-    Ease = 1 - opponent_strength (weaker opponent → easier fixture → higher score).
+    Convert stats.roundPoints array to {group_round_index: points} dict.
+    Each element is either an int or {"roundId": x, "points": y}.
+    Keys are 1-based group stage round indices ("1", "2", "3").
     """
-    if not opponents:
-        return 0.5
-    ease_scores = []
-    for opp_id in opponents:
-        opp_name = squad_id_to_name.get(opp_id, "")
-        opp_strength = _team_strength_score(opp_name)
-        ease_scores.append(1.0 - opp_strength)
-    return round(sum(ease_scores) / len(ease_scores), 4)
+    scores = {}
+    for i, entry in enumerate(round_points, start=1):
+        if isinstance(entry, (int, float)):
+            scores[str(i)] = entry
+        elif isinstance(entry, dict):
+            scores[str(i)] = entry.get("points")
+    return scores
 
 
 def _enrich_players(
@@ -107,40 +116,42 @@ def _enrich_players(
     for p in raw_players:
         squad_id = p.get("squadId", 0)
         team_name = squad_id_to_name.get(squad_id, "Unknown")
-        position_id = p.get("position", 4)
-        position = POSITION_MAP.get(position_id, "FWD")
+        raw_pos   = p.get("position", "FWD")
+        position  = "GKP" if raw_pos == "GK" else raw_pos  # normalise GK → GKP
 
-        stats = p.get("stats", {})
+        stats    = p.get("stats", {})
         opponents = group_fixtures.get(squad_id, [])
 
         team_str = _team_strength_score(team_name)
         fix_ease = _fixture_ease(squad_id, opponents, squad_id_to_name)
 
-        # Cost: the API returns 0 before the game launches; default $6.0m if missing
-        raw_cost = p.get("cost", 0)
-        cost = raw_cost if raw_cost > 0 else 60  # stored as 10× (60 = $6.0m)
+        # price is in $m (e.g. 4.9); store as 10× for LP budget integer arithmetic
+        price = p.get("price") or 0
+        cost  = round(price * 10) if price else 60   # default $6.0m if missing
+
+        full_name, short_name = _player_name(p)
 
         enriched.append({
-            "id": p["id"],
-            "name": p.get("name", ""),
-            "short_name": p.get("shortName", p.get("preferredName", "")),
-            "team": team_name,
-            "team_id": squad_id,
-            "position": position,
-            "cost": cost,                          # raw (10×)
+            "id":           p["id"],
+            "name":         full_name,
+            "short_name":   short_name,
+            "team":         team_name,
+            "team_id":      squad_id,
+            "position":     position,
+            "cost":         cost,                                    # raw 10×
             "team_strength": team_str,
-            "fixture_ease": fix_ease,
-            "opponents": opponents,
+            "fixture_ease":  fix_ease,
+            "opponents":     opponents,
             # Stats
-            "total_points": stats.get("totalPoints", 0),
-            "games_played": stats.get("gamesPlayed", 0),
-            "goals": stats.get("goals", 0),
-            "assists": stats.get("assists", 0),
-            "clean_sheets": stats.get("cleanSheets", 0),
+            "total_points":  stats.get("totalPoints", 0),
+            "games_played":  len(stats.get("roundPoints", [])),
+            "goals":         stats.get("goals", 0),
+            "assists":       stats.get("assists", 0),
+            "clean_sheets":  stats.get("cleanSheets", 0),
             "goals_conceded": stats.get("goalsConceded", 0),
-            "picked_by": round(stats.get("pickedBy", 0.0) * 100, 1),  # → %
-            "round_scores": stats.get("roundScores", {}),
-            "status": p.get("status", "unconfirmed"),
+            "picked_by":     round(p.get("percentSelected", 0.0), 1),
+            "round_scores":  _round_scores(stats.get("roundPoints", [])),
+            "status":        p.get("status", "unconfirmed"),
         })
     return enriched
 
@@ -153,7 +164,7 @@ async def fetch_all_data() -> dict:
         if _cache and (time.time() - _cache_ts) < CACHE_TTL_SECONDS:
             return _cache
 
-        log.info("Fetching fresh data from play.fifa.com/json/")
+        log.info("Fetching fresh data from play.fifa.com/json/fantasy/")
         async with httpx.AsyncClient(headers=HEADERS, timeout=20) as client:
             p_resp, r_resp = await asyncio.gather(
                 client.get(PLAYERS_URL),
@@ -164,18 +175,18 @@ async def fetch_all_data() -> dict:
         r_resp.raise_for_status()
 
         raw_players: list[dict] = p_resp.json()
-        raw_rounds: list[dict]  = r_resp.json()
+        raw_rounds:  list[dict] = r_resp.json()
 
-        round_data = _parse_rounds(raw_rounds)
-        squad_id_to_name = round_data["squad_id_to_name"]
+        round_data        = _parse_rounds(raw_rounds)
+        squad_id_to_name  = round_data["squad_id_to_name"]
         group_fixtures    = round_data["group_fixtures"]
         group_rounds      = round_data["group_rounds"]
 
         players = _enrich_players(raw_players, squad_id_to_name, group_fixtures)
 
         _cache = {
-            "players": players,
-            "group_rounds": group_rounds,
+            "players":        players,
+            "group_rounds":   group_rounds,
             "squad_id_to_name": squad_id_to_name,
         }
         _cache_ts = time.time()
