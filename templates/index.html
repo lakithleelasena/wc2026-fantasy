@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WC 2026 Fantasy Optimizer</title>
+  <link rel="stylesheet" href="/static/style.css?v={{ cache_bust }}" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="trophy">🏆</span>
+        <span class="title">WC 2026 Fantasy</span>
+      </div>
+      <p class="version">v0.1</p>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="optimizer">Squad Optimizer</button>
+    <button class="tab" data-tab="players">All Players</button>
+    <button class="tab" data-tab="fixtures">Group Fixtures</button>
+  </nav>
+
+  <!-- ── OPTIMIZER TAB ── -->
+  <section id="tab-optimizer" class="tab-content active">
+    <div class="controls card">
+      <h2>Pick Your Group Stage Squad</h2>
+      <p class="hint">LP optimizer picks the best 15-player squad (2 GKP · 5 DEF · 5 MID · 3 FWD) for all 3 group stage matches.</p>
+
+      <div class="sliders">
+        <label>Budget: $<span id="budget-display">100.0</span>m
+          <input type="range" id="budget" min="800" max="1000" step="5" value="1000" />
+        </label>
+        <label>Team Strength weight: <span id="w-ts-display">0.30</span>
+          <input type="range" id="w-ts" min="0" max="1" step="0.05" value="0.30" />
+        </label>
+        <label>Fixture Ease weight: <span id="w-fe-display">0.40</span>
+          <input type="range" id="w-fe" min="0" max="1" step="0.05" value="0.40" />
+        </label>
+        <label>Form weight: <span id="w-fo-display">0.20</span>
+          <input type="range" id="w-fo" min="0" max="1" step="0.05" value="0.20" />
+        </label>
+      </div>
+
+      <button id="optimize-btn" class="btn-primary">Optimize Squad</button>
+    </div>
+
+    <div id="squad-result" class="hidden">
+      <div class="summary-banner">
+        <div class="summary-stat">
+          <span class="label">Total Cost</span>
+          <span id="total-cost" class="value">—</span>
+        </div>
+        <div class="summary-stat">
+          <span class="label">Predicted Pts (3 matches)</span>
+          <span id="total-pts" class="value">—</span>
+        </div>
+      </div>
+
+      <h3 class="section-label">Starting XI</h3>
+      <div id="starters-grid" class="player-grid"></div>
+
+      <h3 class="section-label">Bench</h3>
+      <div id="bench-grid" class="player-grid bench"></div>
+    </div>
+
+    <div id="optimizer-loading" class="loading hidden">
+      <div class="spinner"></div>
+      <p>Crunching the numbers…</p>
+    </div>
+    <div id="optimizer-error" class="error-msg hidden"></div>
+  </section>
+
+  <!-- ── PLAYERS TAB ── -->
+  <section id="tab-players" class="tab-content hidden">
+    <div class="controls card">
+      <div class="filter-row">
+        <input type="text" id="player-search" placeholder="Search player or team…" />
+        <select id="pos-filter">
+          <option value="">All positions</option>
+          <option value="GKP">GKP</option>
+          <option value="DEF">DEF</option>
+          <option value="MID">MID</option>
+          <option value="FWD">FWD</option>
+        </select>
+        <select id="sort-by">
+          <option value="predicted_points">Predicted Pts ↓</option>
+          <option value="total_points">Total Pts ↓</option>
+          <option value="cost">Cost ↓</option>
+          <option value="fixture_ease">Fixture Ease ↓</option>
+          <option value="picked_by">Picked By ↓</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="players-loading" class="loading">
+      <div class="spinner"></div>
+      <p>Loading players…</p>
+    </div>
+    <div id="players-error" class="error-msg hidden"></div>
+    <div id="players-table-wrap" class="hidden">
+      <table id="players-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Team</th>
+            <th>Pos</th>
+            <th>Cost</th>
+            <th>Pred Pts</th>
+            <th>Team Str</th>
+            <th>Fix Ease</th>
+            <th>Form</th>
+            <th>Pts So Far</th>
+            <th>Picked By</th>
+          </tr>
+        </thead>
+        <tbody id="players-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── FIXTURES TAB ── -->
+  <section id="tab-fixtures" class="tab-content hidden">
+    <div id="fixtures-loading" class="loading">
+      <div class="spinner"></div>
+      <p>Loading fixtures…</p>
+    </div>
+    <div id="fixtures-error" class="error-msg hidden"></div>
+    <div id="fixtures-content" class="hidden"></div>
+  </section>
+
+  <script src="/static/app.js?v={{ cache_bust }}"></script>
+</body>
+</html>
