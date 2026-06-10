@@ -82,13 +82,17 @@ def _parse_rounds(raw_rounds: list[dict]) -> dict:
             group_fixtures.setdefault(home, []).append(away)
             group_fixtures.setdefault(away, []).append(home)
 
-    # Per-round opponent: {squad_id: {game_idx(1-3): opp_squad_id}}
+    # Per-round opponent and match date: {squad_id: {game_idx(1-3): opp_squad_id / date_str}}
     round_opponents_map: dict[int, dict[int, int]] = {}
+    round_dates_map: dict[int, dict[int, str]] = {}
     for idx, rnd in enumerate(group_rounds, start=1):
         for match in rnd.get("tournaments", []):
             home, away = match["homeSquadId"], match["awaySquadId"]
             round_opponents_map.setdefault(home, {})[idx] = away
             round_opponents_map.setdefault(away, {})[idx] = home
+            date_str = match.get("date", "")[:10]   # "2026-06-14"
+            round_dates_map.setdefault(home, {})[idx] = date_str
+            round_dates_map.setdefault(away, {})[idx] = date_str
 
     # Detect groups (connected components in fixture graph → 12 groups of 4)
     visited: set[int] = set()
@@ -140,12 +144,13 @@ def _parse_rounds(raw_rounds: list[dict]) -> dict:
         groups.append({"name": letter, "teams": teams, "fixtures": fixtures})
 
     return {
-        "group_fixtures":     group_fixtures,
-        "group_rounds":       group_rounds,
-        "squad_id_to_name":   squad_id_to_name,
-        "squad_id_to_abbr":   squad_id_to_abbr,
+        "group_fixtures":      group_fixtures,
+        "group_rounds":        group_rounds,
+        "squad_id_to_name":    squad_id_to_name,
+        "squad_id_to_abbr":    squad_id_to_abbr,
         "round_opponents_map": round_opponents_map,
-        "groups":             groups,
+        "round_dates_map":     round_dates_map,
+        "groups":              groups,
     }
 
 
@@ -179,6 +184,7 @@ def _enrich_players(
     squad_id_to_name: dict[int, str],
     group_fixtures: dict[int, list[int]],
     round_opponents_map: dict[int, dict[int, int]] | None = None,
+    round_dates_map: dict[int, dict[int, str]] | None = None,
 ) -> list[dict]:
     enriched = []
     for p in raw_players:
@@ -225,6 +231,10 @@ def _enrich_players(
                 )
                 for i in [1, 2, 3]
             },
+            "round_dates": {
+                str(i): (round_dates_map or {}).get(squad_id, {}).get(i, "")
+                for i in [1, 2, 3]
+            },
             "status":        p.get("status", "unconfirmed"),
         })
     return enriched
@@ -248,6 +258,30 @@ def _add_shares(players: list[dict]) -> None:
             price_frac = p["cost"] / total_cost
             p["goal_share"]   = round(GOAL_POS_SHARE.get(pos, 0.05) * price_frac, 4)
             p["assist_share"] = round(ASSIST_POS_SHARE.get(pos, 0.05) * price_frac, 4)
+
+
+def _add_day_ranks(players: list[dict]) -> None:
+    """
+    For each group-stage round (1-3), assign each player a 'day rank':
+    1 = their team plays earliest in that round, N = latest.
+    Stored as round_day_ranks: {"1": 3, "2": 1, "3": 5}
+    and round_day_count: {"1": 8, ...} (total unique match days in that round).
+    Modifies players in-place.
+    """
+    for round_idx in [1, 2, 3]:
+        key = str(round_idx)
+        # Collect all unique match dates this round, sorted chronologically
+        dates = sorted(set(
+            p.get("round_dates", {}).get(key, "")
+            for p in players
+            if p.get("round_dates", {}).get(key, "")
+        ))
+        date_rank = {d: i + 1 for i, d in enumerate(dates)}
+        n_days = len(dates) or 1
+        for p in players:
+            date = p.get("round_dates", {}).get(key, "")
+            p.setdefault("round_day_ranks", {})[key] = date_rank.get(date, 1)
+            p.setdefault("round_day_count", {})[key] = n_days
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -276,11 +310,14 @@ async def fetch_all_data() -> dict:
         group_fixtures       = round_data["group_fixtures"]
         group_rounds         = round_data["group_rounds"]
         round_opponents_map  = round_data["round_opponents_map"]
+        round_dates_map      = round_data["round_dates_map"]
 
         players = _enrich_players(
-            raw_players, squad_id_to_name, group_fixtures, round_opponents_map
+            raw_players, squad_id_to_name, group_fixtures,
+            round_opponents_map, round_dates_map
         )
         _add_shares(players)
+        _add_day_ranks(players)
 
         _cache = {
             "players":          players,

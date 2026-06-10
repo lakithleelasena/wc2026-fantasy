@@ -70,6 +70,8 @@ def _to_player_out(p: dict) -> PlayerOut:
         picked_by=p["picked_by"],
         round_scores=p["round_scores"],
         round_opponents=p.get("round_opponents"),
+        round_dates=p.get("round_dates"),
+        round_day_ranks=p.get("round_day_ranks"),
         status=p["status"],
     )
 

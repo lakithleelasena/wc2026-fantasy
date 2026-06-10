@@ -86,14 +86,60 @@ def optimize_squad(players: list[dict], budget: int = BUDGET) -> dict[str, Any]:
     if pulp.LpStatus[prob.status] != "Optimal":
         log.warning(f"LP status: {pulp.LpStatus[prob.status]}")
 
-    starters, bench = [], []
+    selected_players = []
     for i in ids:
         if pulp.value(selected[i]) and pulp.value(selected[i]) > 0.5:
-            p = dict(players[i])
-            p["is_starter"] = bool(pulp.value(starting[i]) and pulp.value(starting[i]) > 0.5)
-            if p["is_starter"]:
-                starters.append(p)
-            else:
-                bench.append(p)
+            selected_players.append(dict(players[i]))
 
+    starters, bench = _timing_bench_assign(selected_players)
     return {"starters": starters, "bench": bench}
+
+
+def _timing_bench_assign(
+    players_15: list[dict],
+) -> tuple[list[dict], list[dict]]:
+    """
+    Assign starter/bench roles within the 15 selected players based on
+    match timing in Round 1: earliest-playing players start, latest-playing
+    go to bench (maximising mid-round substitution flexibility).
+
+    Formation constraints are respected:
+      - Exactly 1 GKP starts (the one playing earlier)
+      - Starters: ≥3 DEF, ≥2 MID, ≥1 FWD
+    """
+    def r1_day(p: dict) -> int:
+        return p.get("round_day_ranks", {}).get("1", 99)
+
+    # ── GKPs: earlier starts, later benches ──────────────────────────────────
+    gkps = sorted([p for p in players_15 if p["position"] == "GKP"], key=r1_day)
+    starting_gkp = [gkps[0]]
+    bench_gkp    = [gkps[1]] if len(gkps) > 1 else []
+
+    outfield = [p for p in players_15 if p["position"] != "GKP"]
+
+    # ── Mandatory starters: satisfy formation minimums ────────────────────────
+    # Sort each group earliest→latest so mandatory slots go to early-playing players
+    by_pos = {
+        pos: sorted([p for p in outfield if p["position"] == pos], key=r1_day)
+        for pos in ("DEF", "MID", "FWD")
+    }
+    mandatory = (
+        by_pos["DEF"][:3] +   # earliest 3 DEF must start
+        by_pos["MID"][:2] +   # earliest 2 MID must start
+        by_pos["FWD"][:1]     # earliest 1 FWD must start
+    )
+    mandatory_ids = {p["id"] for p in mandatory}
+
+    # ── Remaining outfield: 2 DEF + 3 MID + 2 FWD = 7 players ───────────────
+    remaining = sorted(
+        [p for p in outfield if p["id"] not in mandatory_ids],
+        key=r1_day
+    )
+    # Earliest 4 fill flexible starter spots; latest 3 go to bench
+    flex_starters = remaining[:4]
+    flex_bench    = remaining[4:]
+
+    starters = starting_gkp + mandatory + flex_starters
+    bench    = bench_gkp    + flex_bench
+
+    return starters, bench

@@ -38,17 +38,21 @@ function playerCard(p, captainId, viceCaptainId) {
   const predGame = [null, p.predicted_g1, p.predicted_g2, p.predicted_g3];
   const rs   = p.round_scores    || {};
   const ro   = p.round_opponents || {};
+  const rd   = p.round_dates     || {};
+  const rdr  = p.round_day_ranks || {};
+  const rdc  = p.round_day_count || {};
   let totalDisplay = 0;
   const gameRows = [1, 2, 3].map(r => {
-    const actual = rs[r] != null ? rs[r] : null;
-    const pred   = predGame[r] != null ? predGame[r] : (p.predicted_points / 3);
-    const opp    = shortTeam(ro[r] || '');
+    const actual  = rs[r] != null ? rs[r] : null;
+    const pred    = predGame[r] != null ? predGame[r] : (p.predicted_points / 3);
+    const opp     = shortTeam(ro[r] || '');
+    const dateStr = rd[r] ? shortDate(rd[r]) : '';
     if (actual !== null) {
       totalDisplay += actual;
-      return `<div class="game-row actual"><span class="game-label">G${r}</span><span class="game-opp">${opp}</span><span class="game-score">${actual} pts</span></div>`;
+      return `<div class="game-row actual"><span class="game-label">G${r}</span><span class="game-opp">${opp}</span><span class="game-date">${dateStr}</span><span class="game-score">${actual} pts</span></div>`;
     } else {
       totalDisplay += pred;
-      return `<div class="game-row predicted"><span class="game-label">G${r}</span><span class="game-opp">${opp}</span><span class="game-score">~${pred.toFixed(1)}</span></div>`;
+      return `<div class="game-row predicted"><span class="game-label">G${r}</span><span class="game-opp">${opp}</span><span class="game-date">${dateStr}</span><span class="game-score">~${pred.toFixed(1)}</span></div>`;
     }
   }).join('');
 
@@ -238,6 +242,14 @@ const SHORT_NAMES = {
   'IR Iran':                'Iran',
 };
 function shortTeam(name) { return SHORT_NAMES[name] || name; }
+
+function shortDate(iso) {
+  // "2026-06-14" → "Jun 14"
+  if (!iso) return '';
+  const [, m, d] = iso.split('-');
+  const months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[parseInt(m)]} ${parseInt(d)}`;
+}
 
 function fmtDate(iso) {
   if (!iso) return '';

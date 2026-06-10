@@ -34,6 +34,8 @@ class PlayerOut(BaseModel):
     picked_by: float               # % of managers who picked this player
     round_scores: Optional[dict] = None     # {"1": 4, "2": 1, "3": 6, ...}
     round_opponents: Optional[dict] = None  # {"1": "Algeria", "2": "Austria", ...}
+    round_dates: Optional[dict] = None      # {"1": "2026-06-14", "2": "2026-06-20", ...}
+    round_day_ranks: Optional[dict] = None  # {"1": 4, "2": 2, "3": 6} day rank within round
     status: str                    # "confirmed" / "unconfirmed" / "injured"
 
 

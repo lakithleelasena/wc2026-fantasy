@@ -202,9 +202,10 @@ header {
   gap: 3px;
 }
 .game-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 20px 1fr max-content max-content;
   align-items: center;
+  gap: 4px;
   font-size: 12px;
 }
 .game-label { color: var(--muted); font-size: 11px; }
@@ -282,8 +283,9 @@ td.game-pred   { color: var(--muted); font-style: italic; text-align: right; }
 }
 .bar-fill { background: var(--accent2); height: 100%; border-radius: 3px; }
 
-/* game-opp on player cards */
-.game-opp { color: var(--muted); font-size: 10px; flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* game-opp and game-date on player cards */
+.game-opp  { color: var(--muted); font-size: 10px; flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.game-date { color: var(--accent2); font-size: 9px; white-space: nowrap; opacity: 0.8; }
 
 /* Bench row */
 .bench-row { opacity: 0.85; margin-bottom: 8px; }
