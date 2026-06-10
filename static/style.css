@@ -261,10 +261,16 @@ thead th {
   padding: 10px 12px;
   text-align: left;
   text-transform: uppercase;
+  white-space: nowrap;
+  user-select: none;
 }
+thead th[data-col]:hover { color: var(--text); background: #1e3555; }
+thead th[data-col] { cursor: pointer; }
 tbody tr { border-bottom: 1px solid var(--surface2); }
 tbody tr:hover { background: var(--surface2); }
 tbody td { padding: 9px 12px; font-size: 13px; }
+td.game-actual { color: #4cdb7a; font-weight: 700; text-align: right; }
+td.game-pred   { color: var(--muted); font-style: italic; text-align: right; }
 .bar {
   background: var(--surface2);
   border-radius: 3px;
@@ -276,36 +282,65 @@ tbody td { padding: 9px 12px; font-size: 13px; }
 }
 .bar-fill { background: var(--accent2); height: 100%; border-radius: 3px; }
 
-/* Fixtures */
-.round-card {
+/* game-opp on player cards */
+.game-opp { color: var(--muted); font-size: 10px; flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Bench row */
+.bench-row { opacity: 0.85; margin-bottom: 8px; }
+
+/* Group fixtures tab */
+.groups-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+  gap: 16px;
+}
+.group-card {
   background: var(--surface);
   border: 1px solid var(--surface2);
   border-radius: var(--radius);
-  margin-bottom: 16px;
   overflow: hidden;
 }
-.round-header {
-  background: var(--surface2);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
+.group-header {
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  text-transform: uppercase;
 }
-.round-header h3 { font-size: 14px; color: var(--accent); }
-.round-status { font-size: 11px; color: var(--muted); text-transform: uppercase; }
-.fixture-row {
-  align-items: center;
-  border-bottom: 1px solid var(--surface2);
+.group-body {
   display: grid;
-  gap: 8px;
-  grid-template-columns: 1fr auto 1fr auto;
-  padding: 10px 16px;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
 }
-.fixture-row:last-child { border-bottom: none; }
-.team-name { font-size: 13px; font-weight: 600; }
-.team-name.away { text-align: right; }
-.score { color: var(--accent); font-size: 15px; font-weight: 700; min-width: 50px; text-align: center; }
-.fixture-date { color: var(--muted); font-size: 11px; }
+.group-teams { border-right: 1px solid var(--surface2); padding: 10px 12px; }
+.group-fixtures { padding: 10px 12px; }
+
+.teams-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.teams-table th { color: var(--muted); font-size: 10px; text-transform: uppercase; padding: 3px 4px; text-align: left; }
+.teams-table td { padding: 5px 4px; border-bottom: 1px solid var(--surface2); }
+.teams-table tr:last-child td { border-bottom: none; }
+.team-abbr { background: var(--surface2); border-radius: 3px; font-size: 10px; font-weight: 700; padding: 1px 4px; color: var(--accent2); }
+.rank-cell { color: var(--muted); font-size: 11px; }
+.str-bar { background: var(--surface2); border-radius: 3px; height: 5px; width: 50px; display: inline-block; vertical-align: middle; overflow: hidden; }
+.str-fill { background: var(--accent); height: 100%; border-radius: 3px; }
+
+.gf-row {
+  display: grid;
+  grid-template-columns: 20px 1fr 28px 1fr max-content;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--surface2);
+}
+.gf-row:last-child { border-bottom: none; }
+.gf-game { color: var(--accent2); font-size: 10px; font-weight: 700; }
+.gf-home { text-align: right; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gf-score { color: var(--accent); font-weight: 700; text-align: center; font-size: 12px; }
+.gf-away { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gf-date { color: var(--muted); font-size: 10px; text-align: right; }
 
 /* Loading / Error */
 .loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px; color: var(--muted); }

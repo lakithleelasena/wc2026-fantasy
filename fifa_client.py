@@ -19,7 +19,7 @@ import httpx
 
 from config import (
     CACHE_TTL_SECONDS,
-    FIFA_RANKINGS,
+    ELO_RATINGS,
     PLAYERS_URL,
     ROUNDS_URL,
     SEMAPHORE_LIMIT,
@@ -43,10 +43,13 @@ HEADERS = {
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+_ELO_MIN = min(ELO_RATINGS.values())   # 1421 (Qatar)
+_ELO_MAX = max(ELO_RATINGS.values())   # 2157 (Spain)
+
 def _team_strength_score(team_name: str) -> float:
-    """0–1 score from FIFA world ranking (rank 1 → 1.0, rank 48 → ~0.0)."""
-    rank = FIFA_RANKINGS.get(team_name, 48)
-    return round(1.0 - (rank - 1) / 47, 4)
+    """0–1 score from Elo rating: best WC team → 1.0, worst → 0.0."""
+    elo = ELO_RATINGS.get(team_name, _ELO_MIN)
+    return round((elo - _ELO_MIN) / (_ELO_MAX - _ELO_MIN), 4)
 
 
 def _fixture_ease(squad_id: int, opponents: list[int], squad_id_to_name: dict) -> float:
@@ -58,8 +61,9 @@ def _fixture_ease(squad_id: int, opponents: list[int], squad_id_to_name: dict) -
 
 
 def _parse_rounds(raw_rounds: list[dict]) -> dict:
-    """Extract group-stage fixture data and squad id→name mapping."""
+    """Extract group-stage fixture data, squad mappings, per-round opponents, and groups."""
     squad_id_to_name: dict[int, str] = {}
+    squad_id_to_abbr: dict[int, str] = {}
     group_fixtures: dict[int, list[int]] = {}
     group_rounds: list[dict] = []
 
@@ -72,13 +76,75 @@ def _parse_rounds(raw_rounds: list[dict]) -> dict:
             away = match["awaySquadId"]
             squad_id_to_name[home] = match.get("homeSquadName", "")
             squad_id_to_name[away] = match.get("awaySquadName", "")
+            squad_id_to_abbr[home] = match.get("homeSquadAbbr", "")
+            squad_id_to_abbr[away] = match.get("awaySquadAbbr", "")
             group_fixtures.setdefault(home, []).append(away)
             group_fixtures.setdefault(away, []).append(home)
 
+    # Per-round opponent: {squad_id: {game_idx(1-3): opp_squad_id}}
+    round_opponents_map: dict[int, dict[int, int]] = {}
+    for idx, rnd in enumerate(group_rounds, start=1):
+        for match in rnd.get("tournaments", []):
+            home, away = match["homeSquadId"], match["awaySquadId"]
+            round_opponents_map.setdefault(home, {})[idx] = away
+            round_opponents_map.setdefault(away, {})[idx] = home
+
+    # Detect groups (connected components in fixture graph → 12 groups of 4)
+    visited: set[int] = set()
+    raw_groups: list[list[int]] = []
+    for sid in sorted(group_fixtures.keys()):
+        if sid in visited:
+            continue
+        grp: set[int] = set()
+        queue = [sid]
+        while queue:
+            s = queue.pop()
+            if s in grp:
+                continue
+            grp.add(s)
+            queue.extend(group_fixtures.get(s, []))
+        visited |= grp
+        raw_groups.append(sorted(grp))
+    raw_groups.sort(key=lambda g: g[0])
+
+    # Build structured group data with fixtures
+    groups: list[dict] = []
+    for i, squad_ids in enumerate(raw_groups):
+        letter = chr(ord("A") + i)
+        teams = [
+            {
+                "id":       sid,
+                "name":     squad_id_to_name.get(sid, ""),
+                "abbr":     squad_id_to_abbr.get(sid, ""),
+                "rank":     ELO_RATINGS.get(squad_id_to_name.get(sid, ""), _ELO_MIN),
+                "strength": _team_strength_score(squad_id_to_name.get(sid, "")),
+            }
+            for sid in squad_ids
+        ]
+        fixtures: list[dict] = []
+        for game_idx, rnd in enumerate(group_rounds, start=1):
+            for match in rnd.get("tournaments", []):
+                if match["homeSquadId"] in squad_ids:
+                    fixtures.append({
+                        "game":         game_idx,
+                        "home_team":    match.get("homeSquadName", ""),
+                        "home_team_id": match["homeSquadId"],
+                        "away_team":    match.get("awaySquadName", ""),
+                        "away_team_id": match["awaySquadId"],
+                        "date":         match.get("date", ""),
+                        "status":       match.get("status", "scheduled"),
+                        "home_score":   match.get("homeScore"),
+                        "away_score":   match.get("awayScore"),
+                    })
+        groups.append({"name": letter, "teams": teams, "fixtures": fixtures})
+
     return {
-        "group_fixtures": group_fixtures,
-        "group_rounds": group_rounds,
-        "squad_id_to_name": squad_id_to_name,
+        "group_fixtures":     group_fixtures,
+        "group_rounds":       group_rounds,
+        "squad_id_to_name":   squad_id_to_name,
+        "squad_id_to_abbr":   squad_id_to_abbr,
+        "round_opponents_map": round_opponents_map,
+        "groups":             groups,
     }
 
 
@@ -111,6 +177,7 @@ def _enrich_players(
     raw_players: list[dict],
     squad_id_to_name: dict[int, str],
     group_fixtures: dict[int, list[int]],
+    round_opponents_map: dict[int, dict[int, int]] | None = None,
 ) -> list[dict]:
     enriched = []
     for p in raw_players:
@@ -151,6 +218,12 @@ def _enrich_players(
             "goals_conceded": stats.get("goalsConceded", 0),
             "picked_by":     round(p.get("percentSelected", 0.0), 1),
             "round_scores":  _round_scores(stats.get("roundPoints", [])),
+            "round_opponents": {
+                str(i): squad_id_to_name.get(
+                    (round_opponents_map or {}).get(squad_id, {}).get(i), ""
+                )
+                for i in [1, 2, 3]
+            },
             "status":        p.get("status", "unconfirmed"),
         })
     return enriched
@@ -177,17 +250,21 @@ async def fetch_all_data() -> dict:
         raw_players: list[dict] = p_resp.json()
         raw_rounds:  list[dict] = r_resp.json()
 
-        round_data        = _parse_rounds(raw_rounds)
-        squad_id_to_name  = round_data["squad_id_to_name"]
-        group_fixtures    = round_data["group_fixtures"]
-        group_rounds      = round_data["group_rounds"]
+        round_data           = _parse_rounds(raw_rounds)
+        squad_id_to_name     = round_data["squad_id_to_name"]
+        group_fixtures       = round_data["group_fixtures"]
+        group_rounds         = round_data["group_rounds"]
+        round_opponents_map  = round_data["round_opponents_map"]
 
-        players = _enrich_players(raw_players, squad_id_to_name, group_fixtures)
+        players = _enrich_players(
+            raw_players, squad_id_to_name, group_fixtures, round_opponents_map
+        )
 
         _cache = {
-            "players":        players,
-            "group_rounds":   group_rounds,
+            "players":          players,
+            "group_rounds":     group_rounds,
             "squad_id_to_name": squad_id_to_name,
+            "groups":           round_data["groups"],
         }
         _cache_ts = time.time()
         log.info(f"Loaded {len(players)} players, {len(group_rounds)} group rounds")

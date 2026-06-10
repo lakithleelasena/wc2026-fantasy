@@ -48,16 +48,18 @@ function playerCard(p, captainId, viceCaptainId) {
                : '';
 
   const predPerGame = p.predicted_points / 3;
-  const rs = p.round_scores || {};
+  const rs   = p.round_scores    || {};
+  const ro   = p.round_opponents || {};
   let totalDisplay = 0;
   const gameRows = [1, 2, 3].map(r => {
     const actual = rs[r] != null ? rs[r] : null;
+    const opp    = shortTeam(ro[r] || '');
     if (actual !== null) {
       totalDisplay += actual;
-      return `<div class="game-row actual"><span class="game-label">G${r}</span><span class="game-score">${actual} pts</span></div>`;
+      return `<div class="game-row actual"><span class="game-label">G${r}</span><span class="game-opp">${opp}</span><span class="game-score">${actual} pts</span></div>`;
     } else {
       totalDisplay += predPerGame;
-      return `<div class="game-row predicted"><span class="game-label">G${r}</span><span class="game-score">~${predPerGame.toFixed(1)}</span></div>`;
+      return `<div class="game-row predicted"><span class="game-label">G${r}</span><span class="game-opp">${opp}</span><span class="game-score">~${predPerGame.toFixed(1)}</span></div>`;
     }
   }).join('');
 
@@ -162,17 +164,48 @@ async function loadPlayers() {
   }
 }
 
+let sortCol = 'predicted_points';
+let sortDir = 'desc';
+
 function renderPlayers() {
   const search = (document.getElementById('player-search').value || '').toLowerCase();
   const pos    = document.getElementById('pos-filter').value;
-  const sortBy = document.getElementById('sort-by').value;
 
   let players = allPlayers.filter(p =>
     (!pos || p.position === pos) &&
     (!search || p.name.toLowerCase().includes(search) || p.team.toLowerCase().includes(search))
   );
 
-  players.sort((a, b) => b[sortBy] - a[sortBy]);
+  const isStr = document.querySelector(`th[data-col="${sortCol}"]`)?.dataset.type === 'str';
+  players.sort((a, b) => {
+    const av = a[sortCol], bv = b[sortCol];
+    const cmp = isStr ? String(av).localeCompare(String(bv)) : (av - bv);
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  // Update header arrows
+  document.querySelectorAll('#players-table thead th').forEach(th => {
+    const arrow = th.dataset.col === sortCol ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅';
+    th.textContent = th.textContent.replace(/ [▲▼⇅]$/, '') + arrow;
+  });
+
+  const predPerGame = p => p.predicted_points / 3;
+  const gameCell = (p, r) => {
+    const rs = p.round_scores || {};
+    const actual = rs[r] != null ? rs[r] : null;
+    if (actual !== null)
+      return `<td class="game-actual">${actual}</td>`;
+    return `<td class="game-pred">~${predPerGame(p).toFixed(1)}</td>`;
+  };
+
+  // attach virtual g1/g2/g3 for sorting
+  players.forEach(p => {
+    const rs = p.round_scores || {};
+    const ppg = p.predicted_points / 3;
+    p.g1 = rs[1] != null ? rs[1] : ppg;
+    p.g2 = rs[2] != null ? rs[2] : ppg;
+    p.g3 = rs[3] != null ? rs[3] : ppg;
+  });
 
   document.getElementById('players-tbody').innerHTML = players.map(p => `
     <tr>
@@ -181,6 +214,7 @@ function renderPlayers() {
       <td>${posBadge(p.position)}</td>
       <td>$${p.cost.toFixed(1)}m</td>
       <td><strong>${p.predicted_points.toFixed(1)}</strong></td>
+      ${gameCell(p, 1)}${gameCell(p, 2)}${gameCell(p, 3)}
       <td>${bar(p.team_strength)} ${(p.team_strength * 100).toFixed(0)}%</td>
       <td>${bar(p.fixture_ease)} ${(p.fixture_ease * 100).toFixed(0)}%</td>
       <td>${bar(p.form_score)} ${(p.form_score * 100).toFixed(0)}%</td>
@@ -189,12 +223,51 @@ function renderPlayers() {
     </tr>`).join('');
 }
 
-['player-search', 'pos-filter', 'sort-by'].forEach(id =>
+['player-search', 'pos-filter'].forEach(id =>
   document.getElementById(id).addEventListener('input', renderPlayers)
 );
 
-// ── FIXTURES ─────────────────────────────────────────────────────────────
+document.querySelectorAll('#players-table thead th[data-col]').forEach(th => {
+  th.style.cursor = 'pointer';
+  th.addEventListener('click', () => {
+    if (sortCol === th.dataset.col) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortCol = th.dataset.col;
+      sortDir = th.dataset.type === 'str' ? 'asc' : 'desc';
+    }
+    renderPlayers();
+  });
+});
+
+// ── FIXTURES (groups A–L) ────────────────────────────────────────────────
 let fixturesLoaded = false;
+
+const SHORT_NAMES = {
+  'Korea Republic':         'Korea',
+  'Bosnia and Herzegovina': 'Bosnia',
+  'Côte d\'Ivoire':         'C. d\'Ivoire',
+  'New Zealand':            'New Zealand',
+  'Saudi Arabia':           'Saudi Arabia',
+  'South Africa':           'South Africa',
+  'United Arab Emirates':   'UAE',
+  'North Macedonia':        'N. Macedonia',
+  'Congo DR':               'Congo DR',
+  'IR Iran':                'Iran',
+};
+function shortTeam(name) { return SHORT_NAMES[name] || name; }
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function strengthBar(strength) {
+  const pct = Math.round(strength * 100);
+  return `<div class="str-bar"><div class="str-fill" style="width:${pct}%"></div></div>`;
+}
 
 async function loadFixtures() {
   const loading = document.getElementById('fixtures-loading');
@@ -206,25 +279,40 @@ async function loadFixtures() {
   errorEl.classList.add('hidden');
 
   try {
-    const res = await fetch('/api/fixtures');
+    const res = await fetch('/api/groups');
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
-    const rounds = await res.json();
+    const groups = await res.json();
     fixturesLoaded = true;
 
-    content.innerHTML = rounds.map(rnd => `
-      <div class="round-card">
-        <div class="round-header">
-          <h3>Round ${rnd.id} – ${rnd.stage.charAt(0).toUpperCase() + rnd.stage.slice(1)}</h3>
-          <span class="round-status">${rnd.status}</span>
+    content.innerHTML = `<div class="groups-grid">` + groups.map(g => `
+      <div class="group-card">
+        <div class="group-header">Group ${g.name}</div>
+        <div class="group-body">
+          <div class="group-teams">
+            <table class="teams-table">
+              <thead><tr><th>Team</th><th>Elo</th><th>Strength</th></tr></thead>
+              <tbody>
+                ${g.teams.sort((a,b) => b.rank - a.rank).map(t => `
+                  <tr>
+                    <td><span class="team-abbr">${t.abbr}</span> ${shortTeam(t.name)}</td>
+                    <td class="rank-cell">${t.rank}</td>
+                    <td>${strengthBar(t.strength)} ${Math.round(t.strength*100)}%</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div class="group-fixtures">
+            ${g.fixtures.map(f => `
+              <div class="gf-row">
+                <span class="gf-game">G${f.game}</span>
+                <span class="gf-home">${shortTeam(f.home_team)}</span>
+                <span class="gf-score">${f.home_score != null ? `${f.home_score}–${f.away_score}` : 'vs'}</span>
+                <span class="gf-away">${shortTeam(f.away_team)}</span>
+                <span class="gf-date">${fmtDate(f.date)}</span>
+              </div>`).join('')}
+          </div>
         </div>
-        ${rnd.fixtures.map(f => `
-          <div class="fixture-row">
-            <span class="team-name">${f.home_team}</span>
-            <span class="score">${f.home_score != null ? `${f.home_score} – ${f.away_score}` : 'vs'}</span>
-            <span class="team-name away">${f.away_team}</span>
-            <span class="fixture-date">${f.date ? new Date(f.date).toLocaleDateString('en-GB', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : ''}</span>
-          </div>`).join('')}
-      </div>`).join('');
+      </div>`).join('') + `</div>`;
 
     content.classList.remove('hidden');
   } catch (e) {

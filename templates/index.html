@@ -72,7 +72,7 @@
       </div>
 
       <h3 class="section-label">Bench</h3>
-      <div id="bench-grid" class="player-grid bench"></div>
+      <div id="bench-grid" class="pitch-row bench-row"></div>
     </div>
 
     <div id="optimizer-loading" class="loading hidden">
@@ -94,13 +94,6 @@
           <option value="MID">MID</option>
           <option value="FWD">FWD</option>
         </select>
-        <select id="sort-by">
-          <option value="predicted_points">Predicted Pts ↓</option>
-          <option value="total_points">Total Pts ↓</option>
-          <option value="cost">Cost ↓</option>
-          <option value="fixture_ease">Fixture Ease ↓</option>
-          <option value="picked_by">Picked By ↓</option>
-        </select>
       </div>
     </div>
 
@@ -113,16 +106,19 @@
       <table id="players-table">
         <thead>
           <tr>
-            <th>Player</th>
-            <th>Team</th>
-            <th>Pos</th>
-            <th>Cost</th>
-            <th>Pred Pts</th>
-            <th>Team Str</th>
-            <th>Fix Ease</th>
-            <th>Form</th>
-            <th>Pts So Far</th>
-            <th>Picked By</th>
+            <th data-col="name"      data-type="str" title="Player's name as shown in the FIFA Fantasy game">Player</th>
+            <th data-col="team"      data-type="str" title="National team">Team</th>
+            <th data-col="position"  data-type="str" title="Position: GKP=Goalkeeper, DEF=Defender, MID=Midfielder, FWD=Forward">Pos</th>
+            <th data-col="cost"      data-type="num" title="Player price in the FIFA Fantasy game ($m). Set by FIFA/Genius Sports — higher price = higher expected output.">Cost</th>
+            <th data-col="predicted_points" data-type="num" title="Model prediction for total fantasy points across all 3 group games. Weighted sum of: Team Strength (30%), Fixture Ease (40%), Form (20%), Position Role (10%), scaled to 0–30.">Pred Pts</th>
+            <th data-col="g1"               data-type="num" title="Game 1 points — actual if played, predicted if not yet played.">G1</th>
+            <th data-col="g2"               data-type="num" title="Game 2 points — actual if played, predicted if not yet played.">G2</th>
+            <th data-col="g3"               data-type="num" title="Game 3 points — actual if played, predicted if not yet played.">G3</th>
+            <th data-col="team_strength"    data-type="num" title="How strong is this player's team? Derived from their World Football Elo rating (eloratings.net). Spain=1.00, Qatar=0.00. Stronger teams score more goals and keep more clean sheets.">Elo Str</th>
+            <th data-col="fixture_ease"     data-type="num" title="How easy are this team's 3 group stage opponents? Average of (1 - opponent_strength) across G1/G2/G3. High = weak opponents, Low = tough group.">Fix Ease</th>
+            <th data-col="form_score"       data-type="num" title="Points already scored in this tournament, normalised 0–1 (capped at 30 pts). Zero at tournament start, updates as games are played.">Form</th>
+            <th data-col="total_points"     data-type="num" title="Actual fantasy points scored so far in the tournament. Live from the FIFA Fantasy API.">Pts Scored</th>
+            <th data-col="picked_by"        data-type="num" title="% of all FIFA Fantasy managers who have selected this player in their squad. Live from the FIFA Fantasy API.">Picked By</th>
           </tr>
         </thead>
         <tbody id="players-tbody"></tbody>

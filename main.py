@@ -13,6 +13,7 @@ _BUILD_TS = int(time.time())
 from fifa_client import fetch_all_data
 from models import (
     Fixture,
+    Group,
     OptimizeRequest,
     OptimizeResponse,
     PlayerOut,
@@ -63,6 +64,7 @@ def _to_player_out(p: dict) -> PlayerOut:
         clean_sheets=p["clean_sheets"],
         picked_by=p["picked_by"],
         round_scores=p["round_scores"],
+        round_opponents=p.get("round_opponents"),
         status=p["status"],
     )
 
@@ -155,6 +157,20 @@ async def run_optimize(req: OptimizeRequest):
         captain_id=captain_id,
         vice_captain_id=vice_captain_id,
     )
+
+
+@app.get("/api/groups", response_model=List[Group])
+async def get_groups():
+    from models import GroupTeam, GroupFixture
+    data = await fetch_all_data()
+    result = []
+    for g in data["groups"]:
+        result.append(Group(
+            name=g["name"],
+            teams=[GroupTeam(**t) for t in g["teams"]],
+            fixtures=[GroupFixture(**f) for f in g["fixtures"]],
+        ))
+    return result
 
 
 @app.get("/api/fixtures", response_model=List[Round])

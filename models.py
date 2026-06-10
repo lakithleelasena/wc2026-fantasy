@@ -29,7 +29,8 @@ class PlayerOut(BaseModel):
     assists: int
     clean_sheets: int
     picked_by: float               # % of managers who picked this player
-    round_scores: Optional[dict] = None  # {"1": 4, "2": 1, "3": 6, ...}
+    round_scores: Optional[dict] = None     # {"1": 4, "2": 1, "3": 6, ...}
+    round_opponents: Optional[dict] = None  # {"1": "Algeria", "2": "Austria", ...}
     status: str                    # "confirmed" / "unconfirmed" / "injured"
 
 
@@ -67,3 +68,29 @@ class Round(BaseModel):
     start_date: str
     end_date: str
     fixtures: List[Fixture]
+
+
+class GroupTeam(BaseModel):
+    id: int
+    name: str
+    abbr: str
+    rank: int
+    strength: float   # 0–1 normalised
+
+
+class GroupFixture(BaseModel):
+    game: int           # 1/2/3 within group stage
+    home_team: str
+    home_team_id: int
+    away_team: str
+    away_team_id: int
+    date: str
+    status: str
+    home_score: Optional[int] = None
+    away_score: Optional[int] = None
+
+
+class Group(BaseModel):
+    name: str            # "A" … "L"
+    teams: List[GroupTeam]
+    fixtures: List[GroupFixture]
