@@ -72,6 +72,7 @@ def _to_player_out(p: dict) -> PlayerOut:
         round_opponents=p.get("round_opponents"),
         round_dates=p.get("round_dates"),
         round_day_ranks=p.get("round_day_ranks"),
+        round_day_count=p.get("round_day_count"),
         status=p["status"],
     )
 
@@ -152,6 +153,7 @@ async def run_optimize(req: OptimizeRequest):
         total_predicted_points=round(total_pts, 2),
         captain_id=captain_id,
         vice_captain_id=vice_captain_id,
+        conflicts=result.get("conflicts", []),
     )
 
 

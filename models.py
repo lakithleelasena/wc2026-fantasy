@@ -36,6 +36,7 @@ class PlayerOut(BaseModel):
     round_opponents: Optional[dict] = None  # {"1": "Algeria", "2": "Austria", ...}
     round_dates: Optional[dict] = None      # {"1": "2026-06-14", "2": "2026-06-20", ...}
     round_day_ranks: Optional[dict] = None  # {"1": 4, "2": 2, "3": 6} day rank within round
+    round_day_count: Optional[dict] = None  # {"1": 8, "2": 7, "3": 5} total days in round
     status: str                    # "confirmed" / "unconfirmed" / "injured"
 
 
@@ -50,6 +51,7 @@ class OptimizeResponse(BaseModel):
     total_predicted_points: float
     captain_id: Optional[int] = None
     vice_captain_id: Optional[int] = None
+    conflicts: List[str] = []   # unresolved same-day position clashes
 
 
 class Fixture(BaseModel):

@@ -355,4 +355,5 @@ td.game-pred   { color: var(--muted); font-style: italic; text-align: right; }
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.error-msg { background: #3a1a1a; border: 1px solid #e74c3c; border-radius: 8px; color: #e74c3c; padding: 14px 18px; }
+.error-msg    { background: #3a1a1a; border: 1px solid #e74c3c; border-radius: 8px; color: #e74c3c; padding: 14px 18px; }
+.conflict-msg { background: #2a2200; border: 1px solid #f5a623; border-radius: 8px; color: #f5a623; padding: 12px 18px; font-size: 12px; line-height: 1.8; margin-bottom: 12px; }

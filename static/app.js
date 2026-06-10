@@ -46,7 +46,11 @@ function playerCard(p, captainId, viceCaptainId) {
     const actual  = rs[r] != null ? rs[r] : null;
     const pred    = predGame[r] != null ? predGame[r] : (p.predicted_points / 3);
     const opp     = shortTeam(ro[r] || '');
-    const dateStr = rd[r] ? shortDate(rd[r]) : '';
+    const dayRank  = rdr[r];
+    const dayCount = rdc[r];
+    const dateStr  = rd[r]
+      ? `${shortDate(rd[r])}${dayRank ? ` D${dayRank}/${dayCount}` : ''}`
+      : '';
     if (actual !== null) {
       totalDisplay += actual;
       return `<div class="game-row actual"><span class="game-label">G${r}</span><span class="game-opp">${opp}</span><span class="game-date">${dateStr}</span><span class="game-score">${actual} pts</span></div>`;
@@ -112,6 +116,15 @@ document.getElementById('optimize-btn').addEventListener('click', async () => {
     });
     document.getElementById('bench-grid').innerHTML =
       data.bench.map(p => playerCard(p, null, null)).join('');
+
+    // Show any unresolved same-day conflicts
+    const conflictEl = document.getElementById('optimizer-conflicts');
+    if (data.conflicts && data.conflicts.length > 0) {
+      conflictEl.innerHTML = data.conflicts.map(c => `<div>${c}</div>`).join('');
+      conflictEl.classList.remove('hidden');
+    } else {
+      conflictEl.classList.add('hidden');
+    }
 
     result.classList.remove('hidden');
   } catch (e) {
