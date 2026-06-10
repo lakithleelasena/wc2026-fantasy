@@ -19,10 +19,13 @@ class PlayerOut(BaseModel):
     position: str                  # GKP / DEF / MID / FWD
     cost: float                    # display (e.g. 10.5)
     predicted_points: float        # 3-match group stage prediction
-    team_strength: float           # 0–1 normalised FIFA ranking proxy
+    predicted_g1: Optional[float] = None   # predicted pts game 1
+    predicted_g2: Optional[float] = None   # predicted pts game 2
+    predicted_g3: Optional[float] = None   # predicted pts game 3
+    team_strength: float           # 0–1 normalised ELO rating
     fixture_ease: float            # 0–1 average ease of 3 group opponents
     form_score: float              # points scored so far this tournament
-    position_role: float           # attacker/defender role multiplier
+    position_role: float           # deprecated (kept for compat)
     total_points: int              # actual FIF fantasy points so far
     games_played: int
     goals: int

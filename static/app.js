@@ -13,19 +13,7 @@ document.querySelectorAll('.tab').forEach(btn => {
   });
 });
 
-// ── Slider labels ─────────────────────────────────────────────────────────
-function bindSlider(id, displayId, divisor = 1) {
-  const el = document.getElementById(id);
-  const display = document.getElementById(displayId);
-  el.addEventListener('input', () => {
-    display.textContent = divisor === 10
-      ? (el.value / 10).toFixed(1)
-      : parseFloat(el.value).toFixed(2);
-  });
-}
-bindSlider('w-ts', 'w-ts-display');
-bindSlider('w-fe', 'w-fe-display');
-bindSlider('w-fo', 'w-fo-display');
+// ── Slider labels (removed — model is now fully ELO/price-driven) ──────────
 
 // ── Position badge ────────────────────────────────────────────────────────
 function posBadge(pos) {
@@ -47,19 +35,20 @@ function playerCard(p, captainId, viceCaptainId) {
                : isVC  ? '<span class="cap-badge vc-badge">V</span>'
                : '';
 
-  const predPerGame = p.predicted_points / 3;
+  const predGame = [null, p.predicted_g1, p.predicted_g2, p.predicted_g3];
   const rs   = p.round_scores    || {};
   const ro   = p.round_opponents || {};
   let totalDisplay = 0;
   const gameRows = [1, 2, 3].map(r => {
     const actual = rs[r] != null ? rs[r] : null;
+    const pred   = predGame[r] != null ? predGame[r] : (p.predicted_points / 3);
     const opp    = shortTeam(ro[r] || '');
     if (actual !== null) {
       totalDisplay += actual;
       return `<div class="game-row actual"><span class="game-label">G${r}</span><span class="game-opp">${opp}</span><span class="game-score">${actual} pts</span></div>`;
     } else {
-      totalDisplay += predPerGame;
-      return `<div class="game-row predicted"><span class="game-label">G${r}</span><span class="game-opp">${opp}</span><span class="game-score">~${predPerGame.toFixed(1)}</span></div>`;
+      totalDisplay += pred;
+      return `<div class="game-row predicted"><span class="game-label">G${r}</span><span class="game-opp">${opp}</span><span class="game-score">~${pred.toFixed(1)}</span></div>`;
     }
   }).join('');
 
@@ -97,13 +86,7 @@ document.getElementById('optimize-btn').addEventListener('click', async () => {
 
   try {
     const payload = {
-      budget:          Math.round(parseFloat(document.getElementById('budget').value) * 10),
-      w_team_strength: parseFloat(document.getElementById('w-ts').value),
-      w_fixture_ease:  parseFloat(document.getElementById('w-fe').value),
-      w_form:          parseFloat(document.getElementById('w-fo').value),
-      w_position_role: parseFloat((1 - parseFloat(document.getElementById('w-ts').value)
-                       - parseFloat(document.getElementById('w-fe').value)
-                       - parseFloat(document.getElementById('w-fo').value)).toFixed(2)),
+      budget: Math.round(parseFloat(document.getElementById('budget').value) * 10),
     };
 
     const res = await fetch('/api/optimize', {
@@ -189,22 +172,21 @@ function renderPlayers() {
     th.textContent = th.textContent.replace(/ [▲▼⇅]$/, '') + arrow;
   });
 
-  const predPerGame = p => p.predicted_points / 3;
+  const predGame = (p, r) => [null, p.predicted_g1, p.predicted_g2, p.predicted_g3][r] ?? (p.predicted_points / 3);
   const gameCell = (p, r) => {
     const rs = p.round_scores || {};
     const actual = rs[r] != null ? rs[r] : null;
     if (actual !== null)
       return `<td class="game-actual">${actual}</td>`;
-    return `<td class="game-pred">~${predPerGame(p).toFixed(1)}</td>`;
+    return `<td class="game-pred">~${predGame(p, r).toFixed(1)}</td>`;
   };
 
   // attach virtual g1/g2/g3 for sorting
   players.forEach(p => {
     const rs = p.round_scores || {};
-    const ppg = p.predicted_points / 3;
-    p.g1 = rs[1] != null ? rs[1] : ppg;
-    p.g2 = rs[2] != null ? rs[2] : ppg;
-    p.g3 = rs[3] != null ? rs[3] : ppg;
+    p.g1 = rs[1] != null ? rs[1] : predGame(p, 1);
+    p.g2 = rs[2] != null ? rs[2] : predGame(p, 2);
+    p.g3 = rs[3] != null ? rs[3] : predGame(p, 3);
   });
 
   document.getElementById('players-tbody').innerHTML = players.map(p => `

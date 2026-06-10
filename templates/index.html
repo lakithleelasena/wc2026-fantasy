@@ -27,23 +27,12 @@
   <section id="tab-optimizer" class="tab-content active">
     <div class="controls card">
       <h2>Pick Your Group Stage Squad</h2>
-      <p class="hint">LP optimizer picks the best 15-player squad (2 GKP · 5 DEF · 5 MID · 3 FWD) for all 3 group stage matches.</p>
+      <p class="hint">ELO-based model predicts expected goals, clean sheets and fantasy points per game using official FIFA scoring rules. LP optimizer picks the best 15-player squad (2 GKP · 5 DEF · 5 MID · 3 FWD) within budget.</p>
 
       <div class="controls-row">
         <div class="budget-box">
           <label class="budget-label">Budget ($m)
             <input type="number" id="budget" min="80" max="100" step="0.5" value="100" />
-          </label>
-        </div>
-        <div class="sliders">
-          <label>Team Strength <span id="w-ts-display">0.30</span>
-            <input type="range" id="w-ts" min="0" max="1" step="0.05" value="0.30" />
-          </label>
-          <label>Fixture Ease <span id="w-fe-display">0.40</span>
-            <input type="range" id="w-fe" min="0" max="1" step="0.05" value="0.40" />
-          </label>
-          <label>Form <span id="w-fo-display">0.20</span>
-            <input type="range" id="w-fo" min="0" max="1" step="0.05" value="0.20" />
           </label>
         </div>
       </div>

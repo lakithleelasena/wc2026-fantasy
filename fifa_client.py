@@ -24,6 +24,7 @@ from config import (
     ROUNDS_URL,
     SEMAPHORE_LIMIT,
 )
+from scorer import GOAL_POS_SHARE, ASSIST_POS_SHARE
 
 log = logging.getLogger(__name__)
 
@@ -229,6 +230,26 @@ def _enrich_players(
     return enriched
 
 
+def _add_shares(players: list[dict]) -> None:
+    """
+    Compute each player's price-weighted goal_share and assist_share.
+    Within each (team, position) group the share is proportional to price,
+    giving stars a larger slice of the team's expected attacking output.
+    Modifies players in-place.
+    """
+    from collections import defaultdict
+    groups: dict[tuple, list[dict]] = defaultdict(list)
+    for p in players:
+        groups[(p["team_id"], p["position"])].append(p)
+
+    for (_, pos), group in groups.items():
+        total_cost = sum(p["cost"] for p in group) or 1
+        for p in group:
+            price_frac = p["cost"] / total_cost
+            p["goal_share"]   = round(GOAL_POS_SHARE.get(pos, 0.05) * price_frac, 4)
+            p["assist_share"] = round(ASSIST_POS_SHARE.get(pos, 0.05) * price_frac, 4)
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 async def fetch_all_data() -> dict:
@@ -259,6 +280,7 @@ async def fetch_all_data() -> dict:
         players = _enrich_players(
             raw_players, squad_id_to_name, group_fixtures, round_opponents_map
         )
+        _add_shares(players)
 
         _cache = {
             "players":          players,

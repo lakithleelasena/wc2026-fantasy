@@ -20,7 +20,6 @@ from models import (
     Round,
     SquadPlayer,
 )
-from config import W_FIXTURE_EASE, W_FORM, W_POSITION_ROLE, W_TEAM_STRENGTH
 from optimizer import optimize_squad
 from predictor import predict_points
 
@@ -35,6 +34,9 @@ def _build_player_out(p: dict, pred: dict) -> dict:
     return {
         **p,
         "predicted_points": pred["predicted_points"],
+        "predicted_g1":     pred.get("predicted_g1"),
+        "predicted_g2":     pred.get("predicted_g2"),
+        "predicted_g3":     pred.get("predicted_g3"),
         "team_strength":    pred["team_strength"],
         "fixture_ease":     pred["fixture_ease"],
         "form_score":       pred["form_score"],
@@ -53,6 +55,9 @@ def _to_player_out(p: dict) -> PlayerOut:
         position=p["position"],
         cost=round(p["cost"] / 10, 1),
         predicted_points=p["predicted_points"],
+        predicted_g1=p.get("predicted_g1"),
+        predicted_g2=p.get("predicted_g2"),
+        predicted_g3=p.get("predicted_g3"),
         team_strength=p["team_strength"],
         fixture_ease=p["fixture_ease"],
         form_score=p["form_score"],
@@ -88,16 +93,11 @@ async def index(request: Request):
 
 
 @app.get("/api/players", response_model=List[PlayerOut])
-async def get_players(
-    w_team_strength: float = W_TEAM_STRENGTH,
-    w_fixture_ease:  float = W_FIXTURE_EASE,
-    w_form:          float = W_FORM,
-    w_position_role: float = W_POSITION_ROLE,
-):
+async def get_players():
     data = await fetch_all_data()
     result = []
     for p in data["players"]:
-        pred = predict_points(p, w_team_strength, w_fixture_ease, w_form, w_position_role)
+        pred = predict_points(p)
         out = _build_player_out(p, pred)
         result.append(_to_player_out(out))
     result.sort(key=lambda x: x.predicted_points, reverse=True)
@@ -110,13 +110,7 @@ async def run_optimize(req: OptimizeRequest):
 
     enriched = []
     for p in data["players"]:
-        pred = predict_points(
-            p,
-            req.w_team_strength,
-            req.w_fixture_ease,
-            req.w_form,
-            req.w_position_role,
-        )
+        pred = predict_points(p)
         out = _build_player_out(p, pred)
         enriched.append(out)
 
