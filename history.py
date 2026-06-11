@@ -107,26 +107,34 @@ def _projections() -> dict:
     return dict(out)
 
 
+def _pos_class(pos: str) -> str:
+    """Keepers are isolated; outfield positions are interchangeable."""
+    return "GKP" if pos == "GKP" else "OUT"
+
+
 def _match(team: str, full_name: str, position: str) -> dict | None:
     """
     Match a FIFA (name, position) to one projection row by surname.
 
-    Position is only a tiebreaker, not a hard filter: FIFA Fantasy and the
-    projections file disagree on many attackers (e.g. Saka/Yamal are MID in
-    FIFA, FWD in the file), so requiring an exact position match would drop
-    them. Position still disambiguates same-surname teammates (the three
-    Martínezes).
+    Position is enforced only at the class level — keeper vs outfield — so a
+    backup keeper never inherits an outfield star's row (e.g. Rui Silva GKP must
+    not match Bernardo Silva MID). Within the outfield, DEF/MID/FWD are
+    interchangeable because FIFA Fantasy and the file disagree on many attackers
+    (Saka/Yamal are MID in FIFA, FWD in the file). Exact position is a tiebreaker
+    among same-surname teammates (the three Martínezes).
     """
     rows = _projections().get(team)
     if not rows:
         return None
     fifa_norm = _norm(full_name)
-    candidates = [r for r in rows if r["surname"] and r["surname"] in fifa_norm]
+    cls = _pos_class(position)
+    candidates = [
+        r for r in rows
+        if r["surname"] and r["surname"] in fifa_norm and _pos_class(r["pos"]) == cls
+    ]
     if not candidates:
         return None
-    if len(candidates) == 1:
-        return candidates[0]
-    for r in candidates:                       # same-surname teammates → use position
+    for r in candidates:                       # same-surname teammates → use exact position
         if r["pos"] == position:
             return r
     return candidates[0]
