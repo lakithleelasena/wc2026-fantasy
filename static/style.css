@@ -132,6 +132,9 @@ header {
 .summary-stat { display: flex; flex-direction: column; gap: 2px; }
 .summary-stat .label { color: var(--muted); font-size: 11px; text-transform: uppercase; }
 .summary-stat .value { color: var(--accent); font-size: 22px; font-weight: 700; }
+.summary-game { justify-content: flex-end; }
+.summary-game:first-of-type { margin-left: auto; }
+.summary-game .value { color: var(--accent2); font-size: 18px; }
 
 /* Section labels */
 .section-label {

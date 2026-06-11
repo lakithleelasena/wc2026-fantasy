@@ -105,6 +105,19 @@ document.getElementById('optimize-btn').addEventListener('click', async () => {
     document.getElementById('total-cost').textContent = `$${data.total_cost.toFixed(1)}m`;
     document.getElementById('total-pts').textContent  = data.total_predicted_points.toFixed(1);
 
+    // Per-game breakdown across the starting XI (actual once played, else predicted)
+    [1, 2, 3].forEach(r => {
+      const predField = { 1: 'predicted_g1', 2: 'predicted_g2', 3: 'predicted_g3' }[r];
+      let sum = 0, anyActual = false;
+      data.starters.forEach(p => {
+        const actual = (p.round_scores || {})[r];
+        if (actual != null) { sum += actual; anyActual = true; }
+        else { sum += (p[predField] != null ? p[predField] : p.predicted_points / 3); }
+      });
+      document.getElementById('total-g' + r).textContent =
+        anyActual ? sum.toFixed(1) : `~${sum.toFixed(1)}`;
+    });
+
     const byPos = { GKP: [], DEF: [], MID: [], FWD: [] };
     data.starters.forEach(p => (byPos[p.position] || (byPos[p.position] = [])).push(p));
     ['GKP','DEF','MID','FWD'].forEach(pos => {
