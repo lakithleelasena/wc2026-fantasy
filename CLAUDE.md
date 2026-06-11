@@ -29,8 +29,9 @@ Single-page FastAPI app, no database. All state is fetched live from the public 
 ```
 FIFA API (players.json + rounds.json)
   → fifa_client.fetch_all_data()       # fetch, enrich, cache
+      → history.py                      # curated projections.csv: shares, P(start), set pieces
   → predictor.predict_points()          # ELO-based xFP per game
-  → optimizer.optimize_squad()          # PuLP LP → 15 players
+  → optimizer.optimize_squad()          # PuLP LP → 15 players (projection-file players only)
       → _resolve_day_conflicts()        # post-LP: swap same-day clashes
       → _timing_bench_assign()          # post-LP: early starts, late bench
   → FastAPI routes (main.py)
@@ -46,6 +47,7 @@ FIFA API (players.json + rounds.json)
 | `POST /api/optimize` | Run LP optimizer, returns 15-player squad |
 | `GET /api/groups` | 12 group cards (A–L) with fixtures and team data |
 | `GET /api/fixtures` | Raw group-stage rounds/fixtures |
+| `GET /api/predicted-results` | Predicted scorelines per group fixture (ELO expected goals) |
 
 ---
 
@@ -54,7 +56,8 @@ FIFA API (players.json + rounds.json)
 | File | Purpose |
 |---|---|
 | `config.py` | Squad rules, budget, ELO ratings for all 48 WC2026 teams |
-| `fifa_client.py` | Fetches + enriches players; computes goal/assist shares and day ranks |
+| `fifa_client.py` | Fetches + enriches players; applies projections and day ranks |
+| `history.py` | Reads `data/projections.csv` — curated goal/assist shares, P(start), penalty/set-piece flags |
 | `scorer.py` | Official FIFA Fantasy WC2026 scoring rules (goals, CS, saves, cards) |
 | `predictor.py` | ELO-based expected-points model (see below) |
 | `optimizer.py` | PuLP LP solver + post-LP passes (diversity + timing) |
@@ -68,7 +71,8 @@ FIFA API (players.json + rounds.json)
 
 ## Prediction model (`predictor.py` + `scorer.py`)
 
-The model is fully ELO/price-driven — no manual weight sliders.
+The model is ELO-driven for team output, with per-player shares/starts/set-piece
+duty supplied by the curated projections file. No manual weight sliders.
 
 ### Per-game expected fantasy points
 
@@ -76,19 +80,37 @@ For each player × each group-stage match:
 
 1. **Expected goals (team):** `EG = 1.35 + 0.003 × (team_elo − opp_elo)`, clamped [0.3, 4.0]
 2. **Clean sheet probability:** `P(CS) = sigmoid(0.5 + 0.002 × (team_elo − opp_elo))`
-3. **P(start):** tiered by price — $10m+ → 97%, $8m → 85%, $6m → 55%, $4.5m → 20%
-4. **Goal/assist share:** price-weighted within each (team, position) group — stars get a larger slice
-5. **xFP:** multiply out using official FIFA Fantasy scoring rules from `scorer.py`
+3. **P(start):** from `data/projections.csv` for covered teams; else price-tiered fallback ($10m+ → 97%, $8m → 85%, $6m → 55%, $4.5m → 20%)
+4. **Goal/assist share:** from `projections.csv` for covered teams; else price-weighted within each (team, position) group
+5. **Penalty / set-piece bonus:** additive xG/xA for designated takers (see below)
+6. **xFP:** multiply out using official FIFA Fantasy scoring rules from `scorer.py`
 
 ```
 xFP = pts_appearance × P(start)
-    + pts_goal × xG × P(start)
-    + pts_assist × xA × P(start)
+    + pts_goal × xG × P(start)            # xG includes penalty/set-piece bonus
+    + pts_assist × xA × P(start)          # xA includes set-piece bonus
     + pts_clean_sheet × P(CS) × P(start)
     + pts_goals_conceded_penalty × eg_against × P(start)   # GKP/DEF only
     + card_deduction × P(start)
     + save_bonus   # GKP only, ~3.5 saves/game
 ```
+
+### Curated projections (`data/projections.csv` via `history.py`)
+
+For the covered national teams, this file is the single source of truth — it
+replaces the old API-Football history and the price-based proxies. Columns:
+`Team, Player, Position, P_Start, Expected_Minutes, Goal_Share_Pct,
+Assist_Share_Pct, Penalty_Taker (Y/N), Set_Pieces (Primary/Secondary/N)`.
+
+Players are matched to FIFA Fantasy by team + surname; position is only a
+tiebreaker for same-surname teammates (FIFA and the file disagree on many
+MID/FWD labels). Players/teams not in the file fall back to price-based shares
+and the price-tier P(start).
+
+**Additive bonuses** (per game, before P(start) and scoring multipliers; constants in `history.py`):
+- Penalty `Y`: +0.20 team xG, split equally among the team's takers
+- Set piece `Primary`: +0.04 xG, +0.12 xA
+- Set piece `Secondary`: +0.02 xG, +0.06 xA
 
 ### Official scoring rules (stored in `scorer.py`)
 
@@ -110,13 +132,18 @@ xFP = pts_appearance × P(start)
 
 ## Squad optimizer (`optimizer.py`)
 
-### Step 1: LP (PuLP CBC solver)
+### Step 1: LP (PuLP, HiGHS solver — ARM-native, CBC fallback)
 
-Selects the best 15 players maximising predicted_points of the starting XI subject to:
+The candidate pool is restricted to players present in `data/projections.csv`
+(`in_projection` flag); players outside the file are never selected. Selects
+the best 15 maximising predicted_points of the starting XI subject to:
 - Squad: exactly 2 GKP, 5 DEF, 5 MID, 3 FWD
 - Starting XI: 11 players (min 1 GKP, 3 DEF, 2 MID, 1 FWD)
 - Budget ≤ `req.budget` (stored as 10× display, e.g. 1000 = $100m)
 - Max 3 players from any single national team
+
+Restricting the pool shrinks the substitution options, so the day-diversity
+pass (Step 2) may leave more unresolved clashes than with the full roster.
 
 ### Step 2: Day-diversity conflict resolution
 
@@ -159,7 +186,9 @@ Each player dict gets:
 - `round_dates` — `{"1": "2026-06-14", "2": "2026-06-20", "3": "2026-06-26"}`
 - `round_day_ranks` — `{"1": 4, "2": 2, "3": 5}` — day position within each round
 - `round_day_count` — `{"1": 8, "2": 7, "3": 5}` — total match days in each round
-- `goal_share` / `assist_share` — price-weighted fraction of team goals/assists
+- `goal_share` / `assist_share` — fraction of team goals/assists (projections file, else price-weighted)
+- `xg_bonus` / `xa_bonus` — additive penalty/set-piece xG/xA (0 if not a designated taker)
+- `in_projection` — `True` if the player is in `data/projections.csv` (gates optimizer + UI highlight)
 - `round_scores` — actual fantasy points per round once played `{"1": 7, "2": 3, ...}`
 
 ### ELO ratings (`config.py`)
@@ -170,10 +199,11 @@ All 48 WC2026 teams have hand-curated ELO ratings from eloratings.net/2026_World
 
 ## Frontend notes
 
-- **Tabs:** Squad Optimizer / All Players / Group Fixtures
+- **Tabs:** Squad Optimizer / All Players / Group Fixtures / Predicted Results
 - **Player cards** (optimizer view): show position badge, name, team, per-game rows with opponent + date + day-rank (e.g. `Jun 17 D7/8`) + predicted/actual pts, total, cost. Captain = C badge (blue), vice = V badge (cyan).
-- **Players table:** sortable by clicking any column header (▲/▼). G1/G2/G3 columns show actual pts (green) once played, predicted (muted italic) before.
+- **Players table:** sortable by clicking any column header (▲/▼). G1/G2/G3 columns show actual pts (green) once played, predicted (muted italic) before. Players in `projections.csv` show name + country in cyan (`.proj-player`).
 - **Group Fixtures tab:** 12 group cards (A–L), each showing team standings with ELO strength bars and fixture list with scores/dates.
+- **Predicted Results tab:** per-group cards listing each fixture's predicted scoreline (ELO expected goals), sorted by date.
 - **Conflict banner:** amber warning shown below squad if any same-day position clashes couldn't be resolved.
 
 ## Cost encoding
