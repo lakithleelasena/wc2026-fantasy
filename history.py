@@ -44,19 +44,19 @@ def _norm(s: str) -> str:
     return " ".join(s.lower().replace("-", " ").replace(".", " ").split())
 
 
-def _surname_key(player_field: str) -> str:
-    """Last significant name token, ignoring annotations and generic suffixes."""
+def _name_tokens(player_field: str) -> list[str]:
+    """Significant name tokens (len>2, no generic suffix), annotations stripped."""
     base = player_field.split("(")[0]                       # drop "(GK)" etc.
     toks = [t for t in _norm(base).split() if len(t) > 2 and t not in _NAME_SUFFIXES]
     if not toks:                                            # name was only a suffix
         toks = [t for t in _norm(base).split() if len(t) > 2]
-    return toks[-1] if toks else ""
+    return toks
 
 
 @lru_cache(maxsize=1)
 def _projections() -> dict:
     """
-    {team: [ {surname, pos, p_start, goal_share, assist_share,
+    {team: [ {tokens, pos, p_start, goal_share, assist_share,
               xg_bonus, xa_bonus}, ... ]}
 
     Penalty xG (PEN_TEAM_XG_PER_GAME) is split equally among a team's Y takers.
@@ -83,7 +83,7 @@ def _projections() -> dict:
             if pen:
                 pen_takers[team] += 1
             rows.append({
-                "team": team, "surname": _surname_key(r["Player"]), "pos": pos,
+                "team": team, "tokens": _name_tokens(r["Player"]), "pos": pos,
                 "p_start": p_start, "goal_share": round(goal_share, 4),
                 "assist_share": round(assist_share, 4), "pen": pen, "sp": sp,
             })
@@ -100,7 +100,7 @@ def _projections() -> dict:
             xg += SP_SECONDARY_XG
             xa += SP_SECONDARY_XA
         out[r["team"]].append({
-            "surname": r["surname"], "pos": r["pos"], "p_start": r["p_start"],
+            "tokens": r["tokens"], "pos": r["pos"], "p_start": r["p_start"],
             "goal_share": r["goal_share"], "assist_share": r["assist_share"],
             "xg_bonus": round(xg, 4), "xa_bonus": round(xa, 4),
         })
@@ -114,27 +114,35 @@ def _pos_class(pos: str) -> str:
 
 def _match(team: str, full_name: str, position: str) -> dict | None:
     """
-    Match a FIFA (name, position) to one projection row by surname.
+    Match a FIFA (name, position) to one projection row.
 
-    Position is enforced only at the class level — keeper vs outfield — so a
-    backup keeper never inherits an outfield star's row (e.g. Rui Silva GKP must
-    not match Bernardo Silva MID). Within the outfield, DEF/MID/FWD are
-    interchangeable because FIFA Fantasy and the file disagree on many attackers
-    (Saka/Yamal are MID in FIFA, FWD in the file). Exact position is a tiebreaker
-    among same-surname teammates (the three Martínezes).
+    A row matches only if ALL of its significant name tokens appear in the FIFA
+    name. This rejects same-surname different-player collisions — Anthony
+    Valencia must not inherit Enner Valencia's row (shared surname, different
+    first name), and a multi-token file name like "Enner Valencia" needs both
+    "enner" and "valencia". Surname-only file rows ("Kane") still match on the
+    single token.
+
+    Position is enforced at the class level — keeper vs outfield — so a backup
+    keeper never inherits an outfield star's row (Rui Silva GKP ≠ Bernardo Silva
+    MID). Within the outfield, DEF/MID/FWD are interchangeable because FIFA and
+    the file disagree on many attackers (Saka/Yamal are MID in FIFA, FWD in the
+    file). Exact position is a tiebreaker among same-name teammates (the three
+    Martínezes). More-specific rows (more matching tokens) win over less.
     """
     rows = _projections().get(team)
     if not rows:
         return None
-    fifa_norm = _norm(full_name)
+    fifa_tokens = {t for t in _norm(full_name).split() if len(t) > 2}
     cls = _pos_class(position)
     candidates = [
         r for r in rows
-        if r["surname"] and r["surname"] in fifa_norm and _pos_class(r["pos"]) == cls
+        if r["tokens"] and set(r["tokens"]) <= fifa_tokens and _pos_class(r["pos"]) == cls
     ]
     if not candidates:
         return None
-    for r in candidates:                       # same-surname teammates → use exact position
+    candidates.sort(key=lambda r: len(r["tokens"]), reverse=True)   # most specific first
+    for r in candidates:                       # same-name teammates → use exact position
         if r["pos"] == position:
             return r
     return candidates[0]
