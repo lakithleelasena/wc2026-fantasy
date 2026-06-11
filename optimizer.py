@@ -44,6 +44,9 @@ def optimize_squad(players: list[dict], budget: int = BUDGET) -> dict[str, Any]:
     and timing passes.
     Returns {"starters": [...], "bench": [...], "conflicts": [...]}
     """
+    # Only consider players present in the curated projections file
+    players = [p for p in players if p.get("in_projection")]
+
     prob = pulp.LpProblem("WC2026_Squad", pulp.LpMaximize)
 
     n = len(players)
@@ -87,8 +90,9 @@ def optimize_squad(players: list[dict], budget: int = BUDGET) -> dict[str, Any]:
     for tid in set(p["team_id"] for p in players):
         prob += pulp.lpSum(sel[i] for i in ids if players[i]["team_id"] == tid) <= MAX_PER_SQUAD
 
-    # Solve
-    prob.solve(pulp.PULP_CBC_CMD(msg=False))
+    # Solve — prefer HiGHS (ARM-native); fall back to CBC
+    solver = pulp.HiGHS(msg=False) if pulp.HiGHS else pulp.PULP_CBC_CMD(msg=False)
+    prob.solve(solver)
     if pulp.LpStatus[prob.status] != "Optimal":
         log.warning(f"LP status: {pulp.LpStatus[prob.status]}")
 

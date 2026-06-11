@@ -83,7 +83,10 @@ def _predict_one_game(player: dict, game_idx: int) -> float:
     opp_name = player.get("round_opponents", {}).get(str(game_idx), "")
     opp_elo  = ELO_RATINGS.get(opp_name, _ELO_MED) if opp_name else _ELO_MED
 
-    p_start    = _start_prob(cost)
+    # Historical start rate (from real competitive games) overrides the price tier
+    p_start    = player.get("p_start_hist")
+    if p_start is None:
+        p_start = _start_prob(cost)
     eg_for     = _expected_goals(team_elo, opp_elo)    # goals our team scores
     eg_against = _expected_goals(opp_elo, team_elo)    # goals opponent scores
     p_cs       = _clean_sheet_prob(team_elo, opp_elo)
@@ -96,6 +99,10 @@ def _predict_one_game(player: dict, game_idx: int) -> float:
 
     xG = eg_for * goal_share            # expected goals this player scores
     xA = eg_for * ASSIST_RATE * assist_share  # expected assists
+
+    # Penalty / set-piece additive bonuses (don't scale with team strength)
+    xG += player.get("xg_bonus", 0.0)
+    xA += player.get("xa_bonus", 0.0)
 
     # ── Expected fantasy points ──────────────────────────────────────────────
     pts_app    = rules["appearance_full"] * p_start
@@ -120,6 +127,23 @@ def _predict_one_game(player: dict, game_idx: int) -> float:
         xFP += rules.get("saves_per_3", 0) * (GK_SAVES_PER_GAME / 3.0) * p_start
 
     return round(max(0.0, xFP), 2)
+
+
+def predict_scoreline(home_team: str, away_team: str) -> dict:
+    """
+    Predicted scoreline for one match from ELO expected goals.
+    Returns expected (float) and rounded (int) goals for each side.
+    """
+    home_elo = ELO_RATINGS.get(home_team, _ELO_MED)
+    away_elo = ELO_RATINGS.get(away_team, _ELO_MED)
+    xg_home = _expected_goals(home_elo, away_elo)
+    xg_away = _expected_goals(away_elo, home_elo)
+    return {
+        "xg_home":    xg_home,
+        "xg_away":    xg_away,
+        "score_home": round(xg_home),
+        "score_away": round(xg_away),
+    }
 
 
 # ── Public API ────────────────────────────────────────────────────────────────

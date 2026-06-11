@@ -21,6 +21,7 @@
     <button class="tab active" data-tab="optimizer">Squad Optimizer</button>
     <button class="tab" data-tab="players">All Players</button>
     <button class="tab" data-tab="fixtures">Group Fixtures</button>
+    <button class="tab" data-tab="predicted">Predicted Results</button>
   </nav>
 
   <!-- ── OPTIMIZER TAB ── -->
@@ -124,6 +125,16 @@
     </div>
     <div id="fixtures-error" class="error-msg hidden"></div>
     <div id="fixtures-content" class="hidden"></div>
+  </section>
+
+  <!-- ── PREDICTED RESULTS TAB ── -->
+  <section id="tab-predicted" class="tab-content hidden">
+    <div id="predicted-loading" class="loading">
+      <div class="spinner"></div>
+      <p>Predicting results…</p>
+    </div>
+    <div id="predicted-error" class="error-msg hidden"></div>
+    <div id="predicted-content" class="hidden"></div>
   </section>
 
   <script src="/static/app.js?v={{ cache_bust }}"></script>

@@ -252,12 +252,31 @@ def _add_shares(players: list[dict]) -> None:
     for p in players:
         groups[(p["team_id"], p["position"])].append(p)
 
+    from history import player_shares, start_prob, set_piece_bonus
+
     for (_, pos), group in groups.items():
         total_cost = sum(p["cost"] for p in group) or 1
         for p in group:
             price_frac = p["cost"] / total_cost
             p["goal_share"]   = round(GOAL_POS_SHARE.get(pos, 0.05) * price_frac, 4)
             p["assist_share"] = round(ASSIST_POS_SHARE.get(pos, 0.05) * price_frac, 4)
+
+            # Goal/assist shares from curated projections (collision-safe)
+            hist = player_shares(p["team"], p["name"], pos)
+            p["in_projection"] = hist is not None
+            if hist:
+                p["goal_share"]   = hist["goal_share"]
+                p["assist_share"] = hist["assist_share"]
+
+            # P(start) from curated projections; else predictor falls back to price tier
+            ps = start_prob(p["team"], p["name"], pos)
+            if ps is not None:
+                p["p_start_hist"] = ps
+
+            # Penalty / set-piece additive xG/xA bonuses
+            sp = set_piece_bonus(p["team"], p["name"], pos)
+            p["xg_bonus"] = sp["xg_bonus"]
+            p["xa_bonus"] = sp["xa_bonus"]
 
 
 def _add_day_ranks(players: list[dict]) -> None:

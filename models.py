@@ -38,6 +38,7 @@ class PlayerOut(BaseModel):
     round_day_ranks: Optional[dict] = None  # {"1": 4, "2": 2, "3": 6} day rank within round
     round_day_count: Optional[dict] = None  # {"1": 8, "2": 7, "3": 5} total days in round
     status: str                    # "confirmed" / "unconfirmed" / "injured"
+    in_projection: bool = False    # player is in the curated projections file
 
 
 class SquadPlayer(PlayerOut):
@@ -101,3 +102,19 @@ class Group(BaseModel):
     name: str            # "A" … "L"
     teams: List[GroupTeam]
     fixtures: List[GroupFixture]
+
+
+class PredictedFixture(BaseModel):
+    game: int
+    home_team: str
+    away_team: str
+    date: str
+    xg_home: float       # expected goals (float)
+    xg_away: float
+    score_home: int      # rounded predicted scoreline
+    score_away: int
+
+
+class PredictedGroup(BaseModel):
+    name: str
+    fixtures: List[PredictedFixture]   # sorted by date

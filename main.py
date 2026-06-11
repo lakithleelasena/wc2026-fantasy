@@ -17,11 +17,13 @@ from models import (
     OptimizeRequest,
     OptimizeResponse,
     PlayerOut,
+    PredictedFixture,
+    PredictedGroup,
     Round,
     SquadPlayer,
 )
 from optimizer import optimize_squad
-from predictor import predict_points
+from predictor import predict_points, predict_scoreline
 
 app = FastAPI(title="WC 2026 Fantasy Optimizer")
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -74,6 +76,7 @@ def _to_player_out(p: dict) -> PlayerOut:
         round_day_ranks=p.get("round_day_ranks"),
         round_day_count=p.get("round_day_count"),
         status=p["status"],
+        in_projection=p.get("in_projection", False),
     )
 
 
@@ -168,6 +171,29 @@ async def get_groups():
             teams=[GroupTeam(**t) for t in g["teams"]],
             fixtures=[GroupFixture(**f) for f in g["fixtures"]],
         ))
+    return result
+
+
+@app.get("/api/predicted-results", response_model=List[PredictedGroup])
+async def get_predicted_results():
+    data = await fetch_all_data()
+    result = []
+    for g in data["groups"]:
+        fixtures = []
+        for f in g["fixtures"]:
+            sc = predict_scoreline(f["home_team"], f["away_team"])
+            fixtures.append(PredictedFixture(
+                game=f["game"],
+                home_team=f["home_team"],
+                away_team=f["away_team"],
+                date=f["date"],
+                xg_home=sc["xg_home"],
+                xg_away=sc["xg_away"],
+                score_home=sc["score_home"],
+                score_away=sc["score_away"],
+            ))
+        fixtures.sort(key=lambda x: x.date)
+        result.append(PredictedGroup(name=g["name"], fixtures=fixtures))
     return result
 
 

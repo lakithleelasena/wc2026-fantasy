@@ -1,0 +1,189 @@
+Team,Player,Position,P_Start,Expected_Minutes,Goal_Share_Pct,Assist_Share_Pct,Penalty_Taker,Set_Pieces
+Argentina,Martinez (GK),GK,0.98,90,0,0,N,N
+Argentina,Molina,DEF,0.9,85,2,5,N,N
+Argentina,Romero,DEF,0.9,85,3,1,N,N
+Argentina,Martinez,DEF,0.9,85,2,1,N,N
+Argentina,Tagliafico,DEF,0.9,85,2,3,N,N
+Argentina,De Paul,MID,0.88,80,4,12,N,Secondary
+Argentina,Fernandez,MID,0.88,80,5,10,N,N
+Argentina,Mac Allister,MID,0.88,80,5,12,N,N
+Argentina,Messi,FWD,0.95,85,28,25,Y,Primary
+Argentina,Alvarez,FWD,0.9,80,24,12,N,N
+Argentina,Martinez (FWD),FWD,0.9,80,22,8,N,N
+Brazil,Alisson,GK,0.98,90,0,0,N,N
+Brazil,Danilo,DEF,0.9,85,2,3,N,N
+Brazil,Militao,DEF,0.9,85,2,1,N,N
+Brazil,Marquinhos,DEF,0.9,85,3,1,N,N
+Brazil,Mendes,DEF,0.9,85,2,4,N,N
+Brazil,Guimaraes,MID,0.88,80,4,10,N,N
+Brazil,Casemiro,MID,0.88,80,3,5,N,N
+Brazil,Paqueta,MID,0.88,80,8,14,Y,Secondary
+Brazil,Vinicius Jr.,FWD,0.92,82,25,18,N,N
+Brazil,Rodrygo,FWD,0.9,80,18,15,N,N
+Brazil,Raphinha,FWD,0.9,80,15,20,N,N
+England,Pickford,GK,0.98,90,0,0,N,N
+England,Alexander-Arnold,DEF,0.9,85,3,12,N,Primary
+England,Stones,DEF,0.9,85,3,2,N,N
+England,Guehi,DEF,0.9,85,2,1,N,N
+England,Shaw,DEF,0.9,85,2,7,N,N
+England,Rice,MID,0.9,85,4,6,N,N
+England,Bellingham,MID,0.95,85,15,12,N,N
+England,Foden,MID,0.92,82,12,16,N,N
+England,Saka,FWD,0.92,80,18,18,N,N
+England,Kane,FWD,0.98,88,35,10,Y,Primary
+England,Grealish,FWD,0.75,70,8,15,N,N
+France,Maignan,GK,0.98,90,0,0,N,N
+France,Kounde,DEF,0.9,85,2,4,N,N
+France,Konate,DEF,0.9,85,2,1,N,N
+France,Saliba,DEF,0.9,85,2,1,N,N
+France,Hernandez,DEF,0.9,85,2,5,N,N
+France,Tchouameni,MID,0.9,85,4,6,N,N
+France,Kante,MID,0.88,80,2,5,N,N
+France,Zaire-Emery,MID,0.65,45,4,6,N,N
+France,Dembele,FWD,0.9,80,12,20,N,N
+France,Mbappe,FWD,0.98,88,35,15,Y,Primary
+France,Thuram,FWD,0.88,80,18,8,N,N
+Germany,Neuer,GK,0.98,90,0,0,N,N
+Germany,Kimmich,DEF,0.9,85,2,10,N,Primary
+Germany,Rudiger,DEF,0.9,85,2,1,N,N
+Germany,Tah,DEF,0.9,85,2,1,N,N
+Germany,Raum,DEF,0.9,85,2,8,N,N
+Germany,Andrich,MID,0.88,80,3,4,N,N
+Germany,Gundogan,MID,0.9,82,10,14,Y,Secondary
+Germany,Musiala,FWD,0.95,85,20,15,N,N
+Germany,Wirtz,FWD,0.95,85,18,18,N,N
+Germany,Sane,FWD,0.9,80,15,12,N,N
+Germany,Havertz,FWD,0.9,80,22,10,N,N
+Netherlands,Verbruggen,GK,0.98,90,0,0,N,N
+Netherlands,Dumfries,DEF,0.88,85,5,6,N,N
+Netherlands,Van Hecke,DEF,0.88,85,2,1,N,N
+Netherlands,Van Dijk,DEF,0.88,85,5,1,N,N
+Netherlands,Van de Ven,DEF,0.88,85,2,3,N,N
+Netherlands,De Jong,MID,0.95,85,5,12,N,N
+Netherlands,Gravenberch,MID,0.65,45,4,8,N,N
+Netherlands,Reijnders,MID,0.65,45,8,10,N,N
+Netherlands,Simons,FWD,0.9,80,15,18,N,N
+Netherlands,Gakpo,FWD,0.92,82,25,10,N,N
+Netherlands,Depay,FWD,0.9,80,20,12,Y,Primary
+Spain,Simon,GK,0.98,90,0,0,N,N
+Spain,Carvajal,DEF,0.9,85,3,5,N,N
+Spain,Le Normand,DEF,0.9,85,2,1,N,N
+Spain,Laporte,DEF,0.9,85,2,1,N,N
+Spain,Grimaldo,DEF,0.9,85,3,10,N,Secondary
+Spain,Rodri,MID,0.98,88,5,8,N,N
+Spain,Ruiz,MID,0.88,80,8,10,N,N
+Spain,Pedri,MID,0.92,82,8,18,N,N
+Spain,Yamal,FWD,0.95,80,18,20,N,N
+Spain,Morata,FWD,0.9,80,28,8,Y,Secondary
+Spain,Williams,FWD,0.92,80,18,16,N,N
+USA,Turner,GK,0.95,90,0,0,N,N
+USA,Dest,DEF,0.85,85,3,6,N,N
+USA,Richards,DEF,0.85,85,2,1,N,N
+USA,Ream,DEF,0.85,85,2,2,N,N
+USA,Robinson,DEF,0.85,85,3,7,N,N
+USA,Musah,MID,0.85,80,4,6,N,N
+USA,McKennie,MID,0.9,85,8,10,N,N
+USA,Pulisic,MID,0.95,85,25,22,Y,Primary
+USA,Reyna,FWD,0.7,60,12,18,N,N
+USA,Balogun,FWD,0.88,80,28,8,N,N
+USA,Weah,FWD,0.85,80,12,12,N,N
+Belgium,Thibaut Courtois,GK,0.98,90,0,0,N,N
+Belgium,Timothy Castagne,DEF,0.85,80,2,5,N,N
+Belgium,Zeno Debast,DEF,0.7,75,2,1,N,N
+Belgium,Arthur Theate,DEF,0.88,85,2,2,N,N
+Belgium,Maxim De Cuyper,DEF,0.72,75,3,7,N,N
+Belgium,Amadou Onana,MID,0.9,85,5,5,N,N
+Belgium,Youri Tielemans,MID,0.85,80,8,12,N,N
+Belgium,Charles De Ketelaere,MID,0.78,75,12,12,N,N
+Belgium,Kevin De Bruyne,MID,0.95,85,12,30,N,Primary
+Belgium,Jérémy Doku,MID,0.9,80,15,18,N,Secondary
+Belgium,Romelu Lukaku,FWD,0.75,75,35,8,Y,Primary
+Belgium,Leandro Trossard,FWD,0.45,40,18,12,N,N
+Switzerland,Yann Sommer,GK,0.98,90,0,0,N,N
+Switzerland,Manuel Akanji,DEF,0.95,90,3,2,N,N
+Switzerland,Nico Elvedi,DEF,0.88,85,2,1,N,N
+Switzerland,Ricardo Rodriguez,DEF,0.82,80,3,6,N,Secondary
+Switzerland,Silvan Widmer,DEF,0.8,80,2,6,N,N
+Switzerland,Remo Freuler,MID,0.88,85,6,8,N,N
+Switzerland,Granit Xhaka,MID,0.95,90,6,14,N,Primary
+Switzerland,Dan Ndoye,MID,0.75,70,8,10,N,N
+Switzerland,Ruben Vargas,MID,0.78,75,12,14,N,N
+Switzerland,Zeki Amdouni,FWD,0.8,80,18,10,N,N
+Switzerland,Breel Embolo,FWD,0.88,85,30,8,Y,N
+Morocco,Yassine Bounou,GK,0.98,90,0,0,N,N
+Morocco,Achraf Hakimi,DEF,0.95,90,5,10,N,Secondary
+Morocco,Nayef Aguerd,DEF,0.9,88,3,1,N,N
+Morocco,Romain Saïss,DEF,0.8,80,4,1,N,N
+Morocco,Noussair Mazraoui,DEF,0.85,85,2,6,N,N
+Morocco,Sofyan Amrabat,MID,0.95,90,3,5,N,N
+Morocco,Azzedine Ounahi,MID,0.88,85,8,10,N,N
+Morocco,Hakim Ziyech,MID,0.85,80,15,25,Y,Primary
+Morocco,Brahim Díaz,MID,0.88,85,15,18,N,N
+Morocco,Eliesse Ben Seghir,MID,0.7,65,10,12,N,N
+Morocco,Youssef En-Nesyri,FWD,0.9,85,30,6,N,N
+Portugal,Diogo Costa,GK,0.98,90,0,0,N,N
+Portugal,João Cancelo,DEF,0.95,90,4,12,N,N
+Portugal,Rúben Dias,DEF,0.97,90,3,1,N,N
+Portugal,Gonçalo Inácio,DEF,0.88,85,3,2,N,N
+Portugal,Nuno Mendes,DEF,0.92,88,3,8,N,N
+Portugal,João Neves,MID,0.88,85,5,8,N,N
+Portugal,Vitinha,MID,0.9,85,6,12,N,N
+Portugal,Bernardo Silva,MID,0.95,88,8,18,N,Secondary
+Portugal,Bruno Fernandes,MID,0.95,88,12,28,Y,Primary
+Portugal,Rafael Leão,MID,0.9,85,18,14,N,N
+Portugal,Cristiano Ronaldo,FWD,0.8,80,30,5,Y,N
+Ecuador,Hernán Galíndez,GK,0.98,90,0,0,N,N
+Ecuador,Ángelo Preciado,DEF,0.85,80,3,6,N,N
+Ecuador,Félix Torres,DEF,0.85,85,4,1,N,N
+Ecuador,Piero Hincapié,DEF,0.9,88,3,3,N,N
+Ecuador,Pervis Estupiñán,DEF,0.92,88,4,10,N,N
+Ecuador,Moisés Caicedo,MID,0.95,90,5,10,N,Secondary
+Ecuador,Alan Franco,MID,0.8,80,4,6,N,N
+Ecuador,Kendry Páez,MID,0.75,70,10,14,N,N
+Ecuador,John Yeboah,FWD,0.75,70,12,12,N,N
+Ecuador,Enner Valencia,FWD,0.9,85,35,8,Y,Primary
+Ecuador,Jeremy Sarmiento,FWD,0.78,75,15,12,N,N
+Croatia,Dominik Livaković,GK,0.98,90,0,0,N,N
+Croatia,Josip Stanišić,DEF,0.85,85,2,5,N,N
+Croatia,Josip Šutalo,DEF,0.88,88,2,1,N,N
+Croatia,Joško Gvardiol,DEF,0.97,90,5,6,N,N
+Croatia,Borna Sosa,DEF,0.85,85,2,10,N,N
+Croatia,Luka Modrić,MID,0.95,85,8,20,Y,Primary
+Croatia,Mateo Kovačić,MID,0.92,85,5,10,N,N
+Croatia,Mario Pašalić,MID,0.85,80,12,8,N,N
+Croatia,Andrej Kramarić,FWD,0.9,85,22,12,N,N
+Croatia,Ante Budimir,FWD,0.8,75,20,5,N,N
+Croatia,Ivan Perišić,FWD,0.88,80,20,12,N,Secondary
+Mexico,Raúl Rangel,GK,0.9,90,0,0,N,N
+Mexico,Israel Reyes,DEF,0.85,85,2,3,N,N
+Mexico,César Montes,DEF,0.88,88,4,1,N,N
+Mexico,Johan Vásquez,DEF,0.88,88,2,1,N,N
+Mexico,Jesús Gallardo,DEF,0.85,85,3,7,N,N
+Mexico,Edson Álvarez,MID,0.95,90,5,6,N,N
+Mexico,Álvaro Fidalgo,MID,0.85,85,8,14,N,N
+Mexico,Gilberto Mora,MID,0.7,70,8,10,N,N
+Mexico,Roberto Alvarado,FWD,0.85,80,14,16,N,N
+Mexico,Raúl Jiménez,FWD,0.88,85,28,8,Y,Primary
+Mexico,Alexis Vega,FWD,0.85,80,18,14,N,Secondary
+Norway,Ørjan Nyland,GK,0.98,90,0,0,N,N
+Norway,Julian Ryerson,DEF,0.88,85,2,6,N,N
+Norway,Leo Østigård,DEF,0.88,88,3,1,N,N
+Norway,Andreas Hanche-Olsen,DEF,0.85,85,2,1,N,N
+Norway,David Møller Wolfe,DEF,0.82,80,2,5,N,N
+Norway,Martin Ødegaard,MID,0.98,90,10,35,N,Primary
+Norway,Patrick Berg,MID,0.85,85,4,8,N,N
+Norway,Sander Berge,MID,0.88,85,6,8,N,N
+Norway,Oscar Bobb,FWD,0.88,85,15,18,N,N
+Norway,Erling Haaland,FWD,0.99,90,45,8,Y,N
+Norway,Antonio Nusa,FWD,0.85,80,16,14,N,N
+Senegal,Édouard Mendy,GK,0.98,90,0,0,N,N
+Senegal,Formose Mendy,DEF,0.85,85,2,4,N,N
+Senegal,Kalidou Koulibaly,DEF,0.95,90,4,1,N,N
+Senegal,Moussa Niakhaté,DEF,0.85,85,2,1,N,N
+Senegal,Ismail Jakobs,DEF,0.82,80,3,7,N,N
+Senegal,Lamine Camara,MID,0.88,85,8,12,N,N
+Senegal,Pape Matar Sarr,MID,0.92,88,8,10,N,N
+Senegal,Idrissa Gueye,MID,0.85,80,4,6,N,N
+Senegal,Ismaïla Sarr,FWD,0.9,85,18,14,N,N
+Senegal,Nicolas Jackson,FWD,0.88,85,22,8,N,N
+Senegal,Sadio Mané,FWD,0.92,88,30,15,Y,Primary

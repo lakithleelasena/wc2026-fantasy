@@ -10,6 +10,7 @@ document.querySelectorAll('.tab').forEach(btn => {
 
     if (btn.dataset.tab === 'players' && !playersLoaded) loadPlayers();
     if (btn.dataset.tab === 'fixtures' && !fixturesLoaded) loadFixtures();
+    if (btn.dataset.tab === 'predicted' && !predictedLoaded) loadPredicted();
   });
 });
 
@@ -208,8 +209,8 @@ function renderPlayers() {
 
   document.getElementById('players-tbody').innerHTML = players.map(p => `
     <tr>
-      <td>${p.short_name || p.name}</td>
-      <td>${p.team}</td>
+      <td class="${p.in_projection ? 'proj-player' : ''}">${p.short_name || p.name}</td>
+      <td class="${p.in_projection ? 'proj-player' : ''}">${p.team}</td>
       <td>${posBadge(p.position)}</td>
       <td>$${p.cost.toFixed(1)}m</td>
       <td><strong>${p.predicted_points.toFixed(1)}</strong></td>
@@ -324,6 +325,53 @@ async function loadFixtures() {
     content.classList.remove('hidden');
   } catch (e) {
     errorEl.textContent = `Error loading fixtures: ${e.message}`;
+    errorEl.classList.remove('hidden');
+  } finally {
+    loading.classList.add('hidden');
+  }
+}
+
+// ── PREDICTED RESULTS (groups A–L, sorted by day) ─────────────────────────
+let predictedLoaded = false;
+
+async function loadPredicted() {
+  const loading = document.getElementById('predicted-loading');
+  const errorEl = document.getElementById('predicted-error');
+  const content = document.getElementById('predicted-content');
+
+  loading.classList.remove('hidden');
+  content.classList.add('hidden');
+  errorEl.classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/predicted-results');
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    const groups = await res.json();
+    predictedLoaded = true;
+
+    content.innerHTML = `<div class="groups-grid">` + groups.map(g => `
+      <div class="group-card">
+        <div class="group-header">Group ${g.name}</div>
+        <div class="group-body">
+          <div class="pr-fixtures">
+            ${g.fixtures.map(f => {
+              const win = f.score_home > f.score_away ? 'home'
+                        : f.score_away > f.score_home ? 'away' : 'draw';
+              return `
+              <div class="pr-row">
+                <span class="pr-date">${shortDate(f.date)}</span>
+                <span class="pr-home ${win === 'home' ? 'pr-win' : ''}">${shortTeam(f.home_team)}</span>
+                <span class="pr-score">${f.score_home}–${f.score_away}</span>
+                <span class="pr-away ${win === 'away' ? 'pr-win' : ''}">${shortTeam(f.away_team)}</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>`).join('') + `</div>`;
+
+    content.classList.remove('hidden');
+  } catch (e) {
+    errorEl.textContent = `Error loading predicted results: ${e.message}`;
     errorEl.classList.remove('hidden');
   } finally {
     loading.classList.add('hidden');
