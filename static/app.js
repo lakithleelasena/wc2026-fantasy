@@ -47,17 +47,13 @@ function playerCard(p, captainId, viceCaptainId) {
     const actual  = rs[r] != null ? rs[r] : null;
     const pred    = predGame[r] != null ? predGame[r] : (p.predicted_points / 3);
     const opp     = shortTeam(ro[r] || '');
-    const dayRank  = rdr[r];
-    const dayCount = rdc[r];
-    const dateStr  = rd[r]
-      ? `${shortDate(rd[r])}${dayRank ? ` D${dayRank}/${dayCount}` : ''}`
-      : '';
+    const dateStr  = rd[r] ? mdDate(rd[r]) : '';
     if (actual !== null) {
       totalDisplay += actual;
-      return `<div class="game-row actual"><span class="game-label">G${r}</span><span class="game-opp">${opp}</span><span class="game-date">${dateStr}</span><span class="game-score">${actual} pts</span></div>`;
+      return `<div class="game-row actual"><span class="game-label">G${r}</span><span class="game-date">${dateStr}</span><span class="game-opp">${opp}</span><span class="game-score">${actual} pts</span></div>`;
     } else {
       totalDisplay += pred;
-      return `<div class="game-row predicted"><span class="game-label">G${r}</span><span class="game-opp">${opp}</span><span class="game-date">${dateStr}</span><span class="game-score">~${pred.toFixed(1)}</span></div>`;
+      return `<div class="game-row predicted"><span class="game-label">G${r}</span><span class="game-date">${dateStr}</span><span class="game-opp">${opp}</span><span class="game-score">~${pred.toFixed(1)}</span></div>`;
     }
   }).join('');
 
@@ -263,6 +259,13 @@ function shortDate(iso) {
   const [, m, d] = iso.split('-');
   const months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${months[parseInt(m)]} ${parseInt(d)}`;
+}
+
+function mdDate(iso) {
+  // "2026-06-14" → "6/14"
+  if (!iso) return '';
+  const [, m, d] = iso.split('-');
+  return `${parseInt(m)}/${parseInt(d)}`;
 }
 
 function fmtDate(iso) {
