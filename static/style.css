@@ -381,3 +381,58 @@ td.game-pred   { color: var(--muted); font-style: italic; text-align: right; }
 
 /* Players in the curated projections file — highlighted name & country */
 .proj-player { color: var(--accent2); font-weight: 600; }
+
+/* ── Mobile (≤640px) ─────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  html, body { overflow-x: hidden; }
+
+  /* Tighter chrome so content reaches both edges */
+  header        { padding: 12px 14px; }
+  .title        { font-size: 18px; }
+  .trophy       { font-size: 24px; }
+  .tab-content  { padding: 14px 14px; }
+  .card         { padding: 14px; }
+
+  /* Tabs: keep on one band, scroll horizontally instead of wrapping off */
+  .tabs {
+    padding: 10px 14px 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 0 0 auto; padding: 8px 12px; font-size: 12px; }
+
+  /* Summary banner: wrap into a grid, no forced right-push */
+  .summary-banner {
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    padding: 12px 16px;
+  }
+  .summary-stat .value { font-size: 18px; }
+  .summary-game { justify-content: flex-start; }
+  .summary-game:first-of-type { margin-left: 0; }
+  .summary-game .value { font-size: 16px; }
+
+  /* Player cards: two per row, flexible width */
+  .pitch-row { gap: 8px; }
+  .player-card {
+    width: auto;
+    min-width: 0;
+    flex: 1 1 calc(50% - 4px);
+    max-width: calc(50% - 4px);
+    padding: 12px;
+  }
+
+  /* Players table: scroll inside its own box, don't widen the page */
+  #players-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Groups: one card per row, stack teams above fixtures */
+  .groups-grid { grid-template-columns: 1fr; }
+  .group-body  { grid-template-columns: 1fr; }
+  .group-teams {
+    border-right: none;
+    border-bottom: 1px solid var(--surface2);
+  }
+}
